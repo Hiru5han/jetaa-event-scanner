@@ -62,6 +62,15 @@ class SlackManager:
                 "Event Name": event_name,
                 "Location": event_location,
                 "Date": event_date,
+            },
+            "japan_society": {
+                "Event Name": event_name,
+                "Date": event_date,
+            },
+            "embassy": {
+                "Event Name": event_name,
+                "Date": event_date,
+                "Location": event_location,
             }
         }
 
@@ -84,6 +93,10 @@ class SlackManager:
             source = "JETAA Calendar"
         if event_source == "japan_house":
             source = "Japan House website"
+        if event_source == "japan_society":
+            source = "Japan Society website"
+        if event_source == "embassy":
+            source = "Embassy website"
 
         return source
 

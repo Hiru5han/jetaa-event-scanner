@@ -7,18 +7,17 @@ logger.setLevel(logging.DEBUG)
 
 
 class JETAAEventFetcher:
-    def __init__(self, year, month):
+    def __init__(self, year):
         self.BASE_URL = "https://www.jetaa.org.uk/"
         self.EVENTS_PREFIX = "events/events-calendar/"
         self.year = year
-        self.month = month
-        self.url = f"{self.BASE_URL}{self.EVENTS_PREFIX}{self.year}/{self.month}/"
+        # self.url = f"{self.BASE_URL}{self.EVENTS_PREFIX}{self.year}/{self.month}/"
         self.events = []
         self.event_source = "jetaa"
 
-    def fetch_events(self):
+    def fetch_events(self, url):
         try:
-            response = requests.get(self.url)
+            response = requests.get(url)
             response.raise_for_status()  # Raises HTTPError for bad responses
             self.parse_events(response.text)
         except requests.HTTPError as e:
@@ -73,3 +72,18 @@ class JETAAEventFetcher:
             self.events.append(
                 (self.event_source, event_name, event_location, event_date, event_time, event_price, event_url)
             )
+
+    def jetaa_calendar_events_processor(self):
+        events_collected = []
+        try:
+            for month in range(1, 13):
+                url = f"{self.BASE_URL}{self.EVENTS_PREFIX}{self.year}/{month}/"
+                logger.debug(f"\nProcessing month: {month}")
+                # event_fetcher = JETAAEventFetcher(year, month)
+                self.fetch_events(url)
+                events_collected.extend(self.events)
+        except Exception as monthly_processor_error:
+            logger.debug(f"Error: {monthly_processor_error}")
+            return []
+        return events_collected
+    
