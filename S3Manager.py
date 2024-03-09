@@ -67,7 +67,9 @@ class S3Manager:
                 )
                 writer.writerow(
                     [
+                        "Event Host",
                         "Event Name",
+                        "Event Location",
                         "Event Date",
                         "Event Time",
                         "Event Price",

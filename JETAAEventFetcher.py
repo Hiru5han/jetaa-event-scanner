@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class EventFetcher:
+class JETAAEventFetcher:
     def __init__(self, year, month):
         self.BASE_URL = "https://www.jetaa.org.uk/"
         self.EVENTS_PREFIX = "events/events-calendar/"
@@ -14,6 +14,7 @@ class EventFetcher:
         self.month = month
         self.url = f"{self.BASE_URL}{self.EVENTS_PREFIX}{self.year}/{self.month}/"
         self.events = []
+        self.event_source = "jetaa"
 
     def fetch_events(self):
         try:
@@ -59,12 +60,16 @@ class EventFetcher:
             else:
                 event_url = "URL not found"
 
+            event_location = "Not Available"
+
+            logger.debug(f"Event host: {self.event_source}")
             logger.debug(f"Event name: {event_name}")
+            logger.debug(f"Event location: {event_location}")
             logger.debug(f"Event date: {event_date}")
             logger.debug(f"Event time: {event_time}")
             logger.debug(f"Event price: {event_price}")
             logger.debug(f"Event URL: {event_url}")
 
             self.events.append(
-                (event_name, event_date, event_time, event_price, event_url)
+                (self.event_source, event_name, event_location, event_date, event_time, event_price, event_url)
             )

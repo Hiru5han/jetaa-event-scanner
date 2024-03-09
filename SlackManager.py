@@ -10,6 +10,12 @@ logger.setLevel(logging.DEBUG)
 
 class SlackManager:
     def __init__(self):
+        # self.token = "xoxb-1230162479729-6710339098417-dAPi1WKWBSNAv0x1uQ8sS7xQ"
+        # # self.channel_id = "C06LHH2ETL3"
+        # self.channel_id = "U06GJU8S9GT"
+        # self.slack_calendar_image = "https://jetalumnuk.slack.com/files/U06GJU8S9GT/F06MHPPUQHK/image.png"
+        # self.slack_post_api = "https://slack.com/api/chat.postMessage"
+
         self.slack_calendar_image = os.environ["SLACK_CALENDAR_IMAGE"]
         self.slack_post_api = os.environ["SLACK_POST_API"]
         self.channel_id = os.environ["SLACK_CHANNEL_ID"]
@@ -31,28 +37,119 @@ class SlackManager:
 
         return headers
 
-    def _message_text_generator(self, event_name, event_date, event_time, event_price):
+    def _price_formatter(self, event_price):
+        # Convert event_price to string for uniform processing
+        event_price_str = str(event_price)
+        
+        # Check if the price is '0' or 0, and return 'Free' if true
+        if event_price == 0 or event_price_str == "0":
+            return "Free"
+        # Check if '£' is not in event_price_str, and prepend it if absent
+        elif "£" not in event_price_str:
+            return "£" + event_price_str
+        # If '£' is already present, return event_price_str as is
+        return event_price_str
+
+    # def _price_formatter(self, event_price):
+
+    #     if "£" not in event_price:
+    #         formatted_price = "£" + event_price
+    #     elif event_price == 0:
+    #         formatted_price = "Free"
+
+    #     return formatted_price
+
+    # def _message_text_generator(self, event_source, event_name, event_location, event_date, event_time, event_price):
+    #     logger.debug("Generating message text")
+
+    #     formatted_price = self._price_formatter(event_price)
+
+    #     if event_source == "jetaa":
+    #         try:
+    #             event_details_text = (
+    #                 f"*Event Name:* {event_name}\n"
+    #                 # f"*Location:* {event_location}\n"
+    #                 f"*Date:* {event_date}\n"
+    #                 f"*Time:* {event_time}\n"
+    #                 f"*Price:* {formatted_price}\n"
+    #             )
+    #         except Exception as text_generator_error:
+    #             logger.error(f"Error generating text: {text_generator_error}")
+
+    #     elif event_source == "japan_house":
+    #         try:
+    #             event_details_text = (
+    #                 f"*Event Name:* {event_name}\n"
+    #                 f"*Location:* {event_location}\n"
+    #                 f"*Date:* {event_date}\n"
+    #                 # f"*Time:* {event_time}\n"
+    #                 # f"*Price:* {formatted_price}\n"
+    #             )
+    #         except Exception as text_generator_error:
+    #             logger.error(f"Error generating text: {text_generator_error}")
+
+    #     return event_details_text
+
+    def _message_text_generator(self, event_source, event_name, event_location, event_date, event_time, event_price):
         logger.debug("Generating message text")
 
+        # Use a price formatter method to format the event price
+        formatted_price = self._price_formatter(event_price)
+
+        # Define a dictionary to manage the inclusion of event details based on the source
+        event_details_config = {
+            "jetaa": {
+                "Event Name": event_name,
+                "Date": event_date,
+                "Time": event_time,
+                "Price": formatted_price,
+            },
+            "japan_house": {
+                "Event Name": event_name,
+                "Location": event_location,
+                "Date": event_date,
+            }
+        }
+
         try:
-            event_details_text = (
-                f"*Event Name:* {event_name}\n"
-                f"*Date:* {event_date}\n"
-                f"*Time:* {event_time}\n"
-                f"*Price:* £{event_price}\n"
-            )
+            # Select the appropriate format based on the event source
+            event_details = event_details_config.get(event_source, {})
+
+            # Generate the message text using the selected format
+            event_details_text = '\n'.join(f"*{key}:* {value}" for key, value in event_details.items())
+
         except Exception as text_generator_error:
             logger.error(f"Error generating text: {text_generator_error}")
 
         return event_details_text
 
+    def _header_generator(self, event_source):
+        source = None
+
+        if event_source == "jetaa":
+            source = "JETAA Calendar"
+        if event_source == "japan_house":
+            source = "Japan House website"
+
+        return source
+
     def _message_data_generator(
-        self, event_name, event_date, event_time, event_price, event_url
+        self,
+        event_source,
+        event_name,
+        event_location,
+        event_date,
+        event_time,
+        event_price,
+        event_url,
     ):
         logger.debug("Generating message data")
         event_details_text = self._message_text_generator(
-            event_name, event_date, event_time, event_price
+            event_source, event_name, event_location, event_date, event_time, event_price
         )
+
+        source = self._header_generator(event_source)
+
         try:
             data = {
                 "channel": self.channel_id,
@@ -61,7 +158,7 @@ class SlackManager:
                         "type": "header",
                         "text": {
                             "type": "plain_text",
-                            "text": "✨ New Event Found on Calendar!",
+                            "text": f"✨ New Event Found on {source}!",
                             "emoji": True,
                         },
                     },
@@ -82,7 +179,7 @@ class SlackManager:
                                 "type": "button",
                                 "text": {
                                     "type": "plain_text",
-                                    "text": "View on JETAA Calendar",
+                                    "text": "View online",
                                     "emoji": True,
                                 },
                                 "value": "click_me_123",
@@ -103,12 +200,25 @@ class SlackManager:
         return data
 
     def _send_to_slack(
-        self, event_name, event_date, event_time, event_price, event_url
+        self,
+        event_source,
+        event_name,
+        event_location,
+        event_date,
+        event_time,
+        event_price,
+        event_url,
     ):
         logger.debug("Sending to slack")
         headers = self._message_header_generator()
         data = self._message_data_generator(
-            event_name, event_date, event_time, event_price, event_url
+            event_source,
+            event_name,
+            event_location,
+            event_date,
+            event_time,
+            event_price,
+            event_url,
         )
 
         try:
@@ -131,9 +241,23 @@ class SlackManager:
 
         for diff in differences["in_first_not_in_second"]:
             logger.debug(diff)
-            event_name, event_date, event_time, event_price, event_url = eval(diff)
+            (
+                event_source,
+                event_name,
+                event_location,
+                event_date,
+                event_time,
+                event_price,
+                event_url,
+            ) = eval(diff)
             self._send_to_slack(
-                event_name, event_date, event_time, event_price, event_url
+                event_source,
+                event_name,
+                event_location,
+                event_date,
+                event_time,
+                event_price,
+                event_url,
             )
 
         logger.debug("Events that were removed:")
@@ -150,7 +274,7 @@ class SlackManager:
                     "type": "section",
                     "text": {
                         "type": "plain_text",
-                        "text": "Just scanned the calendar, I've put the CSV in S3.",
+                        "text": "The event scanner function has successfully run. CSV is updated in S3.",
                         "emoji": True,
                     },
                 }
