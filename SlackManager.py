@@ -10,12 +10,6 @@ logger.setLevel(logging.DEBUG)
 
 class SlackManager:
     def __init__(self):
-        # self.token = "xoxb-1230162479729-6710339098417-dAPi1WKWBSNAv0x1uQ8sS7xQ"
-        # # self.channel_id = "C06LHH2ETL3"
-        # self.channel_id = "U06GJU8S9GT"
-        # self.slack_calendar_image = "https://jetalumnuk.slack.com/files/U06GJU8S9GT/F06MHPPUQHK/image.png"
-        # self.slack_post_api = "https://slack.com/api/chat.postMessage"
-
         self.slack_calendar_image = os.environ["SLACK_CALENDAR_IMAGE"]
         self.slack_post_api = os.environ["SLACK_POST_API"]
         self.channel_id = os.environ["SLACK_CHANNEL_ID"]
@@ -49,46 +43,6 @@ class SlackManager:
             return "£" + event_price_str
         # If '£' is already present, return event_price_str as is
         return event_price_str
-
-    # def _price_formatter(self, event_price):
-
-    #     if "£" not in event_price:
-    #         formatted_price = "£" + event_price
-    #     elif event_price == 0:
-    #         formatted_price = "Free"
-
-    #     return formatted_price
-
-    # def _message_text_generator(self, event_source, event_name, event_location, event_date, event_time, event_price):
-    #     logger.debug("Generating message text")
-
-    #     formatted_price = self._price_formatter(event_price)
-
-    #     if event_source == "jetaa":
-    #         try:
-    #             event_details_text = (
-    #                 f"*Event Name:* {event_name}\n"
-    #                 # f"*Location:* {event_location}\n"
-    #                 f"*Date:* {event_date}\n"
-    #                 f"*Time:* {event_time}\n"
-    #                 f"*Price:* {formatted_price}\n"
-    #             )
-    #         except Exception as text_generator_error:
-    #             logger.error(f"Error generating text: {text_generator_error}")
-
-    #     elif event_source == "japan_house":
-    #         try:
-    #             event_details_text = (
-    #                 f"*Event Name:* {event_name}\n"
-    #                 f"*Location:* {event_location}\n"
-    #                 f"*Date:* {event_date}\n"
-    #                 # f"*Time:* {event_time}\n"
-    #                 # f"*Price:* {formatted_price}\n"
-    #             )
-    #         except Exception as text_generator_error:
-    #             logger.error(f"Error generating text: {text_generator_error}")
-
-    #     return event_details_text
 
     def _message_text_generator(self, event_source, event_name, event_location, event_date, event_time, event_price):
         logger.debug("Generating message text")
