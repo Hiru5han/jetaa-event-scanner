@@ -1,7 +1,6 @@
 import logging
 import requests
 from bs4 import BeautifulSoup
-import pprint
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
