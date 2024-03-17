@@ -1,5 +1,9 @@
+import logging
 import requests
 from bs4 import BeautifulSoup
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class EmbassyEventFetcher:
@@ -11,8 +15,10 @@ class EmbassyEventFetcher:
     def combine_and_return_events(self):
         events = []
         for month in range(1, 13):
+            logger.debug(f"Fetching events for {month}/{self.year}")
             month_str = str(month).zfill(2)
             url = f"{self.base_url}eve-list{self.short_year}-{month_str}.html"
+            logger.debug(f"URL: {url}")
             headers = {"User-Agent": "Mozilla/5.0"}
             try:
                 response = requests.get(url, headers=headers)
@@ -29,13 +35,14 @@ class EmbassyEventFetcher:
                         event_info = self.extract_event_info(block)
                         events.append(event_info)
                 else:
-                    print(
+                    logger.debug(
                         f"Failed to retrieve the webpage for {month_str}/{self.year}. Status code: {response.status_code}"
                     )
             except Exception as e:
-                print(
+                logger.debug(
                     f"An error occurred while fetching the events for {month_str}/{self.year}: {e}"
                 )
+                return False
         return events
 
     def extract_event_info(self, block):
@@ -63,5 +70,6 @@ class EmbassyEventFetcher:
             "event_date": event_date,
             "event_name": event_name,
         }
+        logger.debug(f"Event details: {event_details}")
 
         return event_details

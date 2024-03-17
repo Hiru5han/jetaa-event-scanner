@@ -1,5 +1,9 @@
+import logging
 import requests
 from bs4 import BeautifulSoup
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class JapanSocietyEventFetcher:
@@ -9,16 +13,23 @@ class JapanSocietyEventFetcher:
 
     def scrape_events_from_url(self, url, existing_events):
         response = self.session.get(url)
+        logger.debug(f"URL: {url}")
+        logger.debug(f"Response text: {response.text}")
         response.raise_for_status()
+        logger.debug("Successfully fetched the webpage content.")
 
         soup = BeautifulSoup(response.text, "html.parser")
 
         event_cards = soup.find_all("div", class_="card")
+        logger.debug(f"Number of event cards: {len(event_cards)}")
+        logger.debug(f"Event cards: {event_cards}")
 
         for card in event_cards:
             event_details = self.extract_event_details(card)
+            logger.debug(f"Event details: {event_details}")
             if event_details:
                 existing_events.append(event_details)
+                logger.debug(f"Existing events: {existing_events}")
 
     def extract_event_details(self, card):
         event_details = {
@@ -72,6 +83,7 @@ class JapanSocietyEventFetcher:
     def combine_and_return_events(self):
         existing_events = []
         self.scrape_events_from_url(self.base_url, existing_events)
+        logger.debug(f"Existing events: {existing_events}")
 
         initial_response = self.session.get(self.base_url)
         initial_response.raise_for_status()
@@ -80,6 +92,7 @@ class JapanSocietyEventFetcher:
 
         unique_page_urls = sorted(set(page_urls), key=page_urls.index)
         for page_url in unique_page_urls:
+            logger.debug(f"Page URL: {page_url}")
             if not page_url.startswith("http"):
                 page_url = self.base_url + page_url
             self.scrape_events_from_url(page_url, existing_events)
