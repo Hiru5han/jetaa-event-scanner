@@ -2,8 +2,6 @@ import logging
 import os
 import requests
 
-# from CSVComparator import CSVComparator
-# from S3Manager import S3Manager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -15,11 +13,6 @@ class SlackManager:
         self.slack_post_api = os.environ["SLACK_POST_API"]
         self.channel_id = os.environ["SLACK_CHANNEL_ID"]
         self.token = os.environ["SLACK_TOKEN"]
-
-        # self.slack_calendar_image = "https://cdn.iconscout.com/icon/free/png-512/free-calendar-766-267585.png?f=webp&w=512"
-        # self.slack_post_api = "https://slack.com/api/chat.postMessage"
-        # self.channel_id = "U06GJU8S9GT"
-        # self.token = "xoxb-1230162479729-6710339098417-dAPi1WKWBSNAv0x1uQ8sS7xQ"
 
     def _message_header_generator(self):
         logger.debug("Generating message header")
@@ -38,25 +31,27 @@ class SlackManager:
         return headers
 
     def _price_formatter(self, event_price):
-        # Convert event_price to string for uniform processing
         event_price_str = str(event_price)
-        
-        # Check if the price is '0' or 0, and return 'Free' if true
+
         if event_price == 0 or event_price_str == "0":
             return "Free"
-        # Check if '£' is not in event_price_str, and prepend it if absent
         elif "£" not in event_price_str:
             return "£" + event_price_str
-        # If '£' is already present, return event_price_str as is
         return event_price_str
 
-    def _message_text_generator(self, event_source, event_name, event_location, event_date, event_time, event_price):
+    def _message_text_generator(
+        self,
+        event_source,
+        event_name,
+        event_location,
+        event_date,
+        event_time,
+        event_price,
+    ):
         logger.debug("Generating message text")
 
-        # Use a price formatter method to format the event price
         formatted_price = self._price_formatter(event_price)
 
-        # Define a dictionary to manage the inclusion of event details based on the source
         event_details_config = {
             "jetaa": {
                 "Event Name": event_name,
@@ -77,15 +72,15 @@ class SlackManager:
                 "Event Name": event_name,
                 "Date": event_date,
                 "Location": event_location,
-            }
+            },
         }
 
         try:
-            # Select the appropriate format based on the event source
             event_details = event_details_config.get(event_source, {})
 
-            # Generate the message text using the selected format
-            event_details_text = '\n'.join(f"*{key}:* {value}" for key, value in event_details.items())
+            event_details_text = "\n".join(
+                f"*{key}:* {value}" for key, value in event_details.items()
+            )
 
         except Exception as text_generator_error:
             logger.error(f"Error generating text: {text_generator_error}")
@@ -118,7 +113,12 @@ class SlackManager:
     ):
         logger.debug("Generating message data")
         event_details_text = self._message_text_generator(
-            event_source, event_name, event_location, event_date, event_time, event_price
+            event_source,
+            event_name,
+            event_location,
+            event_date,
+            event_time,
+            event_price,
         )
 
         source = self._header_generator(event_source)
@@ -144,7 +144,6 @@ class SlackManager:
                             "alt_text": "calendar",
                         },
                     },
-                    {"type": "divider"},
                     {
                         "type": "actions",
                         "elements": [
@@ -161,6 +160,7 @@ class SlackManager:
                             }
                         ],
                     },
+                    {"type": "divider"},
                 ],
             }
 
