@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from Comparator import Comparator
 from JETAAEventFetcher import JETAAEventFetcher
 from JapanHouseEventFetcher import JapanHouseEventFetcher
 from JapanSocietyEventFetcher import JapanSocietyEventFetcher
@@ -7,13 +8,14 @@ from EmbassyEventFetcher import EmbassyEventFetcher
 from S3Manager import S3Manager
 from SlackManager import SlackManager
 import logging
+import pprint
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 def lambda_handler(event, context):
     bucket_name = "jetaa-events"
-    prefix = "as-csv"
+    prefix = "as-json"
     year = 2024
     s3_manager = S3Manager()
     slack_manager = SlackManager()
@@ -21,30 +23,30 @@ def lambda_handler(event, context):
     japan_house_scanner = JapanHouseEventFetcher()
     japan_society_scanner = JapanSocietyEventFetcher()
     embassy_calendar_scanner = EmbassyEventFetcher(year)
+    comparator = Comparator()
+    fresh_scan_events = {}
 
-    jetaa_events_collected = jetaa_calendar_events_processor.jetaa_calendar_events_processor()
-    logger.debug(f"Events collected: {jetaa_events_collected}")
-    japan_house_events_appended = japan_house_scanner.combine_and_return_events(jetaa_events_collected)
-    logger.debug(f"Japan House Events: {japan_house_events_appended}")
-    japan_society_events_appended = japan_society_scanner.combine_and_return_events(japan_house_events_appended)
-    logger.debug(f"Japan Society Events: {japan_society_events_appended}")
-    embassy_events_appended = embassy_calendar_scanner.combine_and_return_events(japan_society_events_appended)
-    logger.debug(f"Embassy Events: {embassy_events_appended}")
+    fresh_scan_events["JETAA"] = jetaa_calendar_events_processor.jetaa_calendar_events_processor()
+    fresh_scan_events["JAPAN_HOUSE"] = japan_house_scanner.combine_and_return_events()
+    fresh_scan_events["JAPAN_SOCIETY"] = japan_society_scanner.combine_and_return_events()
+    fresh_scan_events["JAPAN_EMBASSY"] = embassy_calendar_scanner.combine_and_return_events()
 
-    if embassy_events_appended:
-        slack_manager.slack_notifier(embassy_events_appended, bucket_name, prefix)
 
-        file_name = (
-            f"{prefix}/events_{datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}.csv"
-        )
-        s3_manager.upload_csv_to_s3(embassy_events_appended, bucket_name, file_name)
+    new_events = comparator.find_new_events(fresh_scan_events)
 
-        slack_manager.send_to_hiru()
+    pprint.pprint(new_events)
 
-        return {
-            "statusCode": 200,
-            "body": json.dumps("Event processing completed successfully."),
-        }
-    else:
-        logger.debug("Error processing events.")
-        return {"statusCode": 500, "body": json.dumps("Error processing events.")}
+    slack_manager.slack_notifier(new_events)
+
+    file_name = (
+        f"{prefix}/events_{datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}.json"
+    )
+
+    s3_manager.upload_json_to_s3(fresh_scan_events, bucket_name, file_name)
+
+    slack_manager.send_to_hiru()
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps("Event processing completed successfully."),
+    }

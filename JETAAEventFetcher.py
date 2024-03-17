@@ -1,6 +1,7 @@
 import logging
 import requests
 from bs4 import BeautifulSoup
+import pprint
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -11,7 +12,6 @@ class JETAAEventFetcher:
         self.BASE_URL = "https://www.jetaa.org.uk/"
         self.EVENTS_PREFIX = "events/events-calendar/"
         self.year = year
-        # self.url = f"{self.BASE_URL}{self.EVENTS_PREFIX}{self.year}/{self.month}/"
         self.events = []
         self.event_source = "jetaa"
 
@@ -40,7 +40,6 @@ class JETAAEventFetcher:
             event_name = event_details.find("h3").text.strip()
             event_date = f"{day} {current_month_year}"
             event_time_price = event_details.find("p").text.strip()
-            # Check if the string contains '//'
             if "//" in event_time_price:
                 event_time, event_price = event_time_price.split("//", 1)
                 event_time = event_time.strip()
@@ -49,11 +48,9 @@ class JETAAEventFetcher:
                 event_time = "Unknown time"
                 event_price = "Unknown price"
 
-            # Fetch the event URL
             event_url_element = event.find("a")
             if event_url_element and "href" in event_url_element.attrs:
                 event_url = event_url_element["href"]
-                # If necessary, adjust the URL to be absolute if it's relative
                 if not event_url.startswith("http"):
                     event_url = self.BASE_URL + event_url.lstrip("/")
             else:
@@ -70,20 +67,25 @@ class JETAAEventFetcher:
             logger.debug(f"Event URL: {event_url}")
 
             self.events.append(
-                (self.event_source, event_name, event_location, event_date, event_time, event_price, event_url)
+                {
+                    "event_source": self.event_source,
+                    "event_name": event_name,
+                    "event_location": event_location,
+                    "event_date": event_date,
+                    "event_time": event_time,
+                    "event_price": event_price,
+                    "event_url": event_url,
+                }
             )
 
     def jetaa_calendar_events_processor(self):
-        events_collected = []
+        self.events.clear()  # Clear existing events before processing a new year
         try:
             for month in range(1, 13):
                 url = f"{self.BASE_URL}{self.EVENTS_PREFIX}{self.year}/{month}/"
                 logger.debug(f"\nProcessing month: {month}")
-                # event_fetcher = JETAAEventFetcher(year, month)
                 self.fetch_events(url)
-                events_collected.extend(self.events)
         except Exception as monthly_processor_error:
             logger.debug(f"Error: {monthly_processor_error}")
             return []
-        return events_collected
-    
+        return self.events
