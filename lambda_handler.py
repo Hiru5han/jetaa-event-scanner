@@ -20,7 +20,7 @@ def lambda_handler(event, context):
     jetaa_calendar_events_processor = JETAAEventFetcher(year)
     japan_house_scanner = JapanHouseEventFetcher()
     japan_society_scanner = JapanSocietyEventFetcher()
-    embass_calendar_scanner = EmbassyEventFetcher(year)
+    embassy_calendar_scanner = EmbassyEventFetcher(year)
 
     jetaa_events_collected = jetaa_calendar_events_processor.jetaa_calendar_events_processor()
     logger.debug(f"Events collected: {jetaa_events_collected}")
@@ -28,11 +28,11 @@ def lambda_handler(event, context):
     logger.debug(f"Japan House Events: {japan_house_events_appended}")
     japan_society_events_appended = japan_society_scanner.combine_and_return_events(japan_house_events_appended)
     logger.debug(f"Japan Society Events: {japan_society_events_appended}")
-    embassy_events_appended = embass_calendar_scanner.combine_and_return_events(japan_society_events_appended)
+    embassy_events_appended = embassy_calendar_scanner.combine_and_return_events(japan_society_events_appended)
     logger.debug(f"Embassy Events: {embassy_events_appended}")
 
     if embassy_events_appended:
-        slack_manager.slack_notifier(s3_manager, embassy_events_appended, bucket_name, prefix)
+        slack_manager.slack_notifier(embassy_events_appended, bucket_name, prefix)
 
         file_name = (
             f"{prefix}/events_{datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}.csv"
