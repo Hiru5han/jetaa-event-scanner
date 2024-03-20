@@ -5,6 +5,7 @@ from JETAAEventFetcher import JETAAEventFetcher
 from JapanHouseEventFetcher import JapanHouseEventFetcher
 from JapanSocietyEventFetcher import JapanSocietyEventFetcher
 from EmbassyEventFetcher import EmbassyEventFetcher
+from JapanFoundationEventFetcher import JapanFoundationEventFetcher
 from S3Manager import S3Manager
 from SlackManager import SlackManager
 import logging
@@ -23,19 +24,15 @@ def lambda_handler(event, context):
     japan_house_scanner = JapanHouseEventFetcher()
     japan_society_scanner = JapanSocietyEventFetcher()
     embassy_calendar_scanner = EmbassyEventFetcher(year)
+    japan_foundation = JapanFoundationEventFetcher()
     comparator = Comparator()
     fresh_scan_events = {}
 
-    fresh_scan_events["JETAA"] = (
-        jetaa_calendar_events_processor.jetaa_calendar_events_processor()
-    )
+    fresh_scan_events["JETAA"] = (jetaa_calendar_events_processor.jetaa_calendar_events_processor())
     fresh_scan_events["JAPAN_HOUSE"] = japan_house_scanner.combine_and_return_events()
-    fresh_scan_events["JAPAN_SOCIETY"] = (
-        japan_society_scanner.combine_and_return_events()
-    )
-    fresh_scan_events["JAPAN_EMBASSY"] = (
-        embassy_calendar_scanner.combine_and_return_events()
-    )
+    fresh_scan_events["JAPAN_SOCIETY"] = (japan_society_scanner.combine_and_return_events())
+    fresh_scan_events["JAPAN_EMBASSY"] = (embassy_calendar_scanner.combine_and_return_events())
+    fresh_scan_events["JAPAN_FOUNDATION"] = (japan_foundation.combine_and_return_events())
 
     new_events = comparator.find_new_events(fresh_scan_events)
 
