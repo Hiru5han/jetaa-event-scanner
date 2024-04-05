@@ -10,3 +10,4 @@ This Python-based Slackbot serves the Japan Exchange and Teaching Programme Alum
 - **Japan House:** https://www.japanhouselondon.uk/whats-on/
 - **Japan Society:** https://www.japansociety.org.uk/events?eventcat=0&eventpage=0
 - **Japan Embassy:** https://www.uk.emb-japan.go.jp/JAPANUKEvent/index.html
+- **Japan Foundation:** https://www.jpf.org.uk/whatson.php
