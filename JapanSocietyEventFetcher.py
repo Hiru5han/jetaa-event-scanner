@@ -2,6 +2,8 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 
+from SlackManager import SlackManager
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -10,26 +12,34 @@ class JapanSocietyEventFetcher:
     def __init__(self):
         self.base_url = "https://www.japansociety.org.uk/events"
         self.session = requests.Session()
+        self.slack_manager = SlackManager()
 
     def scrape_events_from_url(self, url, existing_events):
-        response = self.session.get(url)
-        logger.debug(f"URL: {url}")
-        logger.debug(f"Response text: {response.text}")
-        response.raise_for_status()
-        logger.debug("Successfully fetched the webpage content.")
+        try:
+            response = self.session.get(url)
+            logger.debug(f"URL: {url}")
+            logger.debug(f"Response text: {response.text}")
+            response.raise_for_status()
+            logger.debug("Successfully fetched the webpage content.")
 
-        soup = BeautifulSoup(response.text, "html.parser")
+            soup = BeautifulSoup(response.text, "html.parser")
 
-        event_cards = soup.find_all("div", class_="card")
-        logger.debug(f"Number of event cards: {len(event_cards)}")
-        logger.debug(f"Event cards: {event_cards}")
+            event_cards = soup.find_all("div", class_="card")
+            logger.debug(f"Number of event cards: {len(event_cards)}")
+            logger.debug(f"Event cards: {event_cards}")
 
-        for card in event_cards:
-            event_details = self.extract_event_details(card)
-            logger.debug(f"Event details: {event_details}")
-            if event_details:
-                existing_events.append(event_details)
-                logger.debug(f"Existing events: {existing_events}")
+            for card in event_cards:
+                event_details = self.extract_event_details(card)
+                logger.debug(f"Event details: {event_details}")
+                if event_details:
+                    existing_events.append(event_details)
+                    logger.debug(f"Existing events: {existing_events}")
+        except Exception as scrape_error:
+            logger.error(f"Error fetching events from URL: {url}")
+            logger.error(f"Error: {scrape_error}")
+            self.slack_manager.send_error_message(
+                f"Error fetching events from URL: {url}"
+            )
 
     def extract_event_details(self, card):
         event_details = {
@@ -97,4 +107,6 @@ class JapanSocietyEventFetcher:
                 page_url = self.base_url + page_url
             self.scrape_events_from_url(page_url, existing_events)
 
+        if existing_events == []:
+            self.slack_manager.send_error_message("Issue with Japan Society event fetcher, no events found")
         return existing_events

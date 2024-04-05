@@ -2,6 +2,8 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 
+from SlackManager import SlackManager
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -13,14 +15,16 @@ class JETAAEventFetcher:
         self.year = year
         self.events = []
         self.event_source = "jetaa"
+        self.slack_manager = SlackManager()
 
     def fetch_events(self, url):
         try:
             response = requests.get(url)
             response.raise_for_status()  # Raises HTTPError for bad responses
             self.parse_events(response.text)
-        except requests.HTTPError as e:
-            logger.debug(f"Failed to retrieve webpage: {e}")
+        except requests.HTTPError as fetch_error:
+            logger.error(f"Failed to retrieve webpage: {fetch_error}")
+            self.slack_manager.send_error_message(f"Failed to retrieve webpage: {fetch_error}")
 
     def parse_events(self, html_content):
         soup = BeautifulSoup(html_content, "html.parser")
@@ -85,6 +89,11 @@ class JETAAEventFetcher:
                 logger.debug(f"\nProcessing month: {month}")
                 self.fetch_events(url)
         except Exception as monthly_processor_error:
-            logger.debug(f"Error: {monthly_processor_error}")
+            logger.error(f"Error: {monthly_processor_error}")
+            self.slack_manager.send_error_message(f"Error: {monthly_processor_error}")
             return []
+        
+        if self.events == []:
+            self.slack_manager.send_error_message("Issue with JETAA event fetcher, no events found")
+
         return self.events

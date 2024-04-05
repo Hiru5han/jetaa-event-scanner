@@ -2,6 +2,9 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 
+from SlackManager import SlackManager
+from Utils import Utils
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -11,6 +14,8 @@ class EmbassyEventFetcher:
         self.base_url = "https://www.uk.emb-japan.go.jp/JAPANUKEvent/event/"
         self.year = year
         self.short_year = str(year)[2:]
+        self.slack_manager = SlackManager()
+        self.utils = Utils()
 
     def combine_and_return_events(self):
         events = []
@@ -35,31 +40,47 @@ class EmbassyEventFetcher:
                         event_info = self.extract_event_info(block)
                         events.append(event_info)
                 else:
-                    logger.debug(
+                    logger.error(
+                        f"Failed to retrieve the webpage for {month_str}/{self.year}. Status code: {response.status_code}"
+                    )
+                    self.slack_manager.send_error_message(
                         f"Failed to retrieve the webpage for {month_str}/{self.year}. Status code: {response.status_code}"
                     )
             except Exception as e:
-                logger.debug(
+                logger.error(
+                    f"An error occurred while fetching the events for {month_str}/{self.year}: {e}"
+                )
+                self.slack_manager.send_error_message(
                     f"An error occurred while fetching the events for {month_str}/{self.year}: {e}"
                 )
                 return False
+            
+        if events == []:
+            logger.error("Issue with Japan Society event fetcher, no events found")
+            self.slack_manager.send_error_message("Issue with Japan Society event fetcher, no events found")
+
         return events
 
     def extract_event_info(self, block):
-        event_url_suffix = block.find("a")["href"]
-        event_url = self.base_url + event_url_suffix
-        event_name = block.find("h4", class_="card-title").text.strip()
-        date_location_str = (
-            block.find("p", class_="mbr-text").text.strip().split("\r\n")
-        )
-        event_date = date_location_str[0].strip()
-        event_location = (
-            date_location_str[1].strip()
-            if len(date_location_str) > 1
-            else "Not Available"
-        )
-        event_time = "Not Available"
-        event_price = "Not Available"
+        try:
+            event_url_suffix = block.find("a")["href"]
+            event_url = self.base_url + event_url_suffix
+            event_name = block.find("h4", class_="card-title").text.strip()
+            date_location_str = (
+                block.find("p", class_="mbr-text").text.strip().split("\r\n")
+            )
+            event_date = date_location_str[0].strip()
+            event_location = (
+                date_location_str[1].strip()
+                if len(date_location_str) > 1
+                else "Not Available"
+            )
+            event_time = "Not Available"
+            event_price = "Not Available"
+        except Exception as extraction_error:
+            logger.error(f"Error extracting event info from block: {extraction_error}")
+            self.slack_manager.send_error_message(f"Error extracting event info from block: {extraction_error}")
+            return False
 
         event_details = {
             "event_source": "embassy",

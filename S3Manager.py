@@ -6,6 +6,8 @@ import boto3
 import logging
 from botocore.exceptions import NoCredentialsError
 
+from SlackManager import SlackManager
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -13,6 +15,7 @@ logger.setLevel(logging.DEBUG)
 class S3Manager:
     def __init__(self):
         self.s3_resource = boto3.resource("s3")
+        self.slack_manager = SlackManager()
 
     def get_latest_json_file_resource(self, bucket_name, prefix):
         """Returns the content of the latest JSON file from an S3 bucket using boto3 resource, optionally filtered by a prefix."""
@@ -31,11 +34,20 @@ class S3Manager:
             json_object = json.load(bucket.Object(latest_file.key).get()["Body"])
             logger.debug(f"JSON object: {json_object}")
             logger.debug(f"JSON object type: {type(json_object)}")
-            return json_object
         except NoCredentialsError:
-            return "No AWS credentials found. Please configure them to proceed."
-        except Exception as e:
-            return f"An error occurred: {e}"
+            logger.debug("No AWS credentials found. Please configure them to proceed.")
+            self.slack_manager.send_error_message(
+                "No AWS credentials found. Please configure them to proceed."
+            )
+            return False
+        except Exception as latest_json_get_error:
+            logger.debug(f"An error occurred: {latest_json_get_error}")
+            self.slack_manager.send_error_message(
+                f"An error occurred: {latest_json_get_error}"
+            )
+            return False
+
+        return json_object
 
     def _csv_formatter(self, events_collected):
         logger.debug("Formatting csv before puttting to S3")
@@ -62,6 +74,9 @@ class S3Manager:
             encoded_csv_content = csv_content.encode("utf-8")
         except Exception as formatting_error:
             logger.error(f"Error with formatting: {formatting_error}")
+            self.slack_manager.send_error_message(
+                f"Error with formatting: {formatting_error}"
+            )
             return None
 
         return encoded_csv_content
@@ -71,6 +86,7 @@ class S3Manager:
 
         if not encoded_csv_content:
             logger.debug("Formatter returned None, exitting")
+            self.slack_manager.send_error_message("Formatter returned None, exitting")
             sys.exit(1)
 
         try:
@@ -83,7 +99,11 @@ class S3Manager:
             logger.error(
                 f"Failed to upload {file_name} to S3 bucket {bucket_name}: {upload_error}"
             )
+            self.slack_manager.send_error_message(
+                f"Failed to upload {file_name} to S3 bucket {bucket_name}: {upload_error}"
+            )
             return False
+        return True
 
     def upload_json_to_s3(self, dictionary, bucket_name, file_name):
         json_data = json.dumps(dictionary, indent=4)
@@ -96,6 +116,9 @@ class S3Manager:
             logger.debug(f"Uploaded {file_name} to S3 bucket {bucket_name}")
         except Exception as upload_error:
             logger.error(
+                f"Failed to upload {file_name} to S3 bucket {bucket_name}: {upload_error}"
+            )
+            self.slack_manager.send_error_message(
                 f"Failed to upload {file_name} to S3 bucket {bucket_name}: {upload_error}"
             )
             return False

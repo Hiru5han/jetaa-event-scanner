@@ -3,10 +3,13 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
+from SlackManager import SlackManager
+
 class JapanFoundationEventFetcher:
     def __init__(self):
         self.base_url = 'https://www.jpf.org.uk'
         self.whatson_url = f'{self.base_url}/whatson.php'
+        self.slack_manager = SlackManager()
     
     def fetch_webpage_content(self):
         response = requests.get(self.whatson_url)
@@ -52,6 +55,8 @@ class JapanFoundationEventFetcher:
 
             events.append(output_item)
         
+        if events == []:
+            self.slack_manager.send_error_message("Issue with Japan Foundation event fetcher, no events found")
         return events
 
 if __name__ == "__main__":
