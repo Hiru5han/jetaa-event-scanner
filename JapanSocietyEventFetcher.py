@@ -14,7 +14,7 @@ class JapanSocietyEventFetcher:
         self.session = requests.Session()
         self.slack_manager = SlackManager()
 
-    def scrape_events_from_url(self, url, existing_events):
+    def _scrape_events_from_url(self, url, existing_events):
         try:
             response = self.session.get(url)
             logger.debug(f"URL: {url}")
@@ -29,7 +29,7 @@ class JapanSocietyEventFetcher:
             logger.debug(f"Event cards: {event_cards}")
 
             for card in event_cards:
-                event_details = self.extract_event_details(card)
+                event_details = self._extract_event_details(card)
                 logger.debug(f"Event details: {event_details}")
                 if event_details:
                     existing_events.append(event_details)
@@ -37,11 +37,8 @@ class JapanSocietyEventFetcher:
         except Exception as scrape_error:
             logger.error(f"Error fetching events from URL: {url}")
             logger.error(f"Error: {scrape_error}")
-            self.slack_manager.send_error_message(
-                f"Error fetching events from URL: {url}"
-            )
 
-    def extract_event_details(self, card):
+    def _extract_event_details(self, card):
         event_details = {
             "event_source": "japan_society",
             "event_location": "Not Available",
@@ -81,7 +78,7 @@ class JapanSocietyEventFetcher:
         else:
             return event_details
 
-    def get_pagination_urls(self, soup):
+    def _get_pagination_urls(self, soup):
         pagination_links = soup.find_all("a", class_="page-link")
         page_urls = [
             link.get("href")
@@ -92,20 +89,20 @@ class JapanSocietyEventFetcher:
 
     def combine_and_return_events(self):
         existing_events = []
-        self.scrape_events_from_url(self.base_url, existing_events)
+        self._scrape_events_from_url(self.base_url, existing_events)
         logger.debug(f"Existing events: {existing_events}")
 
         initial_response = self.session.get(self.base_url)
         initial_response.raise_for_status()
         initial_soup = BeautifulSoup(initial_response.text, "html.parser")
-        page_urls = self.get_pagination_urls(initial_soup)
+        page_urls = self._get_pagination_urls(initial_soup)
 
         unique_page_urls = sorted(set(page_urls), key=page_urls.index)
         for page_url in unique_page_urls:
             logger.debug(f"Page URL: {page_url}")
             if not page_url.startswith("http"):
                 page_url = self.base_url + page_url
-            self.scrape_events_from_url(page_url, existing_events)
+            self._scrape_events_from_url(page_url, existing_events)
 
         if existing_events == []:
             self.slack_manager.send_error_message("Issue with Japan Society event fetcher, no events found")

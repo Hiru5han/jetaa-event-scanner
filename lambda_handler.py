@@ -39,10 +39,14 @@ def lambda_handler(event, context):
     logger.debug(new_events)
 
     slack_manager.slack_notifier(new_events)
+    logger.info("Slack notified")
+
+    # send to sqs queue
 
     file_name = f"{prefix}/events_{datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}.json"
 
     s3_manager.upload_json_to_s3(fresh_scan_events, bucket_name, file_name)
+    logger.info("Uploaded to S3")
 
     slack_manager.send_to_hiru()
 

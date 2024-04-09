@@ -24,7 +24,6 @@ class JETAAEventFetcher:
             self.parse_events(response.text)
         except requests.HTTPError as fetch_error:
             logger.error(f"Failed to retrieve webpage: {fetch_error}")
-            self.slack_manager.send_error_message(f"Failed to retrieve webpage: {fetch_error}")
 
     def parse_events(self, html_content):
         soup = BeautifulSoup(html_content, "html.parser")
@@ -90,7 +89,6 @@ class JETAAEventFetcher:
                 self.fetch_events(url)
         except Exception as monthly_processor_error:
             logger.error(f"Error: {monthly_processor_error}")
-            self.slack_manager.send_error_message(f"Error: {monthly_processor_error}")
             return []
         
         if self.events == []:

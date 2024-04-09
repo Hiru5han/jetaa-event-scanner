@@ -37,23 +37,17 @@ class EmbassyEventFetcher:
                     soup = BeautifulSoup(response.text, "html.parser")
                     event_blocks = soup.findAll("div", class_="card-wrapper")
                     for block in event_blocks:
-                        event_info = self.extract_event_info(block)
+                        event_info = self._extract_event_info(block)
                         events.append(event_info)
                 else:
                     logger.error(
-                        f"Failed to retrieve the webpage for {month_str}/{self.year}. Status code: {response.status_code}"
-                    )
-                    self.slack_manager.send_error_message(
                         f"Failed to retrieve the webpage for {month_str}/{self.year}. Status code: {response.status_code}"
                     )
             except Exception as e:
                 logger.error(
                     f"An error occurred while fetching the events for {month_str}/{self.year}: {e}"
                 )
-                self.slack_manager.send_error_message(
-                    f"An error occurred while fetching the events for {month_str}/{self.year}: {e}"
-                )
-                return False
+                return []
             
         if events == []:
             logger.error("Issue with Japan Society event fetcher, no events found")
@@ -61,7 +55,7 @@ class EmbassyEventFetcher:
 
         return events
 
-    def extract_event_info(self, block):
+    def _extract_event_info(self, block):
         try:
             event_url_suffix = block.find("a")["href"]
             event_url = self.base_url + event_url_suffix
@@ -79,7 +73,6 @@ class EmbassyEventFetcher:
             event_price = "Not Available"
         except Exception as extraction_error:
             logger.error(f"Error extracting event info from block: {extraction_error}")
-            self.slack_manager.send_error_message(f"Error extracting event info from block: {extraction_error}")
             return False
 
         event_details = {

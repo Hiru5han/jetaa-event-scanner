@@ -17,7 +17,7 @@ class JapanHouseEventFetcher:
         self.event_source = "japan_house"
         self.slack_manager = SlackManager()
 
-    def fetch_page_content(self):
+    def _fetch_page_content(self):
         response = requests.get(self.url)
         logger.debug(f"URL: {self.url}")
         logger.debug(f"Status code: {response.status_code}")
@@ -28,18 +28,22 @@ class JapanHouseEventFetcher:
             return response.text
         else:
             logger.error(f"Failed to fetch the {self.event_source} webpage content. Status code: {response.status_code}")
-            self.slack_manager.send_error_message(f"Failed to fetch the {self.event_source} webpage content. Status code: {response.status_code}")
+            return False
 
-    def parse_html_for_json(self, html_content):
-        soup = BeautifulSoup(html_content, "html.parser")
-        component_loader_tag = soup.find("component-loader", {"name": "ArchiveWhatsOn"})
-        json_string = component_loader_tag["v-bind"]
-        self.events_data = json.loads(json_string)
+    def _parse_html_for_json(self, html_content):
+        
+        try:
+            soup = BeautifulSoup(html_content, "html.parser")
+            component_loader_tag = soup.find("component-loader", {"name": "ArchiveWhatsOn"})
+            json_string = component_loader_tag["v-bind"]
+            self.events_data = json.loads(json_string)
+        except Exception as parsing_error:
+            logger.error(f"Error parsing HTML content for {self.event_source}: {parsing_error}")
+            self.events_data = []
 
-    def extract_events(self):
+    def _extract_events(self):
         if self.events_data is None:
             logger.error("Events data is not initialized. Make sure to parse HTML content first.")
-            self.slack_manager.send_error_message("Events data is not initialized. Make sure to parse HTML content first.")
             return []
 
         try:
@@ -68,17 +72,21 @@ class JapanHouseEventFetcher:
                     logger.debug(f"Extracted events: {extracted_events}")
         except Exception as extract_events_error:
             logger.error(f"Error extracting events from {self.event_source}: {extract_events_error}")
-            self.slack_manager.send_error_message(f"Error extracting events from {self.event_source}: {extract_events_error}")
             return []
         return extracted_events
 
     def combine_and_return_events(self):
         events_collected = []
-        html_content = self.fetch_page_content()
+        html_content = self._fetch_page_content()
+        if not html_content:
+            return []
+
         logger.debug(f"HTML content: {html_content}")
-        self.parse_html_for_json(html_content)
-        website_events = self.extract_events()
+        self._parse_html_for_json(html_content)
+        
+        website_events = self._extract_events()
         logger.debug(f"Website events: {website_events}")
+        
         combined_events = events_collected + website_events
         logger.debug(f"Combined events: {combined_events}")
 
