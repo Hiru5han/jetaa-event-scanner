@@ -3,7 +3,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from SlackManager import SlackManager
-from Utils import Utils
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -15,7 +14,6 @@ class EmbassyEventFetcher:
         self.year = year
         self.short_year = str(year)[2:]
         self.slack_manager = SlackManager()
-        self.utils = Utils()
 
     def combine_and_return_events(self):
         events = []

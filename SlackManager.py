@@ -13,7 +13,7 @@ class SlackManager:
         self.slack_post_api = os.environ["SLACK_POST_API"]
         self.pubilc_channel_id = os.environ["SLACK_CHANNEL_ID"]
         self.token = os.environ["SLACK_TOKEN"]
-        self.developer_slack_id = "U06GJU8S9GT"
+        self.developer_slack_id = os.environ["DEVELOPER_SLACK_ID"]
 
     def _message_header_generator(self):
         logger.debug("Generating message header")
