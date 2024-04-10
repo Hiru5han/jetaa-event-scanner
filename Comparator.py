@@ -61,7 +61,7 @@ class Comparator:
                         not in old_scan_event_source_ids[fresh_scan_source]
                     ):
                         logger.debug(f"New event found: {fresh_scan_event}")
-                        new_events.append(f"Appending event to new events list: {fresh_scan_event}")
+                        new_events.append(fresh_scan_event)
         except Exception as event_compare_error:
             logger.error(f"Error comparing old events to new: {event_compare_error}")
             self.slack_manager.send_error_message(f"Error comparing old events to new: {event_compare_error}")
