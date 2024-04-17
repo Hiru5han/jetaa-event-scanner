@@ -13,7 +13,7 @@ class SlackManager:
         self.slack_post_api = os.environ["SLACK_POST_API"]
         self.pubilc_channel_id = os.environ["SLACK_CHANNEL_ID"]
         self.token = os.environ["SLACK_TOKEN"]
-        self.developer_slack_id = os.environ["DEVELOPER_SLACK_ID"]
+        self.developer_slack_id = os.environ["DEVELOPER_CHANNEL_SLACK_ID"]
 
     def _message_header_generator(self):
         logger.debug("Generating message header")
@@ -244,7 +244,7 @@ class SlackManager:
                 event_url,
             )
 
-    def send_to_hiru(self):
+    def send_to_dev(self):
         logger.debug("Sending to slack")
         headers = self._message_header_generator()
         data = {

@@ -28,11 +28,17 @@ def lambda_handler(event, context):
     comparator = Comparator()
     fresh_scan_events = {}
 
-    fresh_scan_events["JETAA"] = (jetaa_calendar_events_processor.jetaa_calendar_events_processor())
+    fresh_scan_events["JETAA"] = (
+        jetaa_calendar_events_processor.jetaa_calendar_events_processor()
+    )
     fresh_scan_events["JAPAN_HOUSE"] = japan_house_scanner.combine_and_return_events()
-    fresh_scan_events["JAPAN_SOCIETY"] = (japan_society_scanner.combine_and_return_events())
-    fresh_scan_events["JAPAN_EMBASSY"] = (embassy_calendar_scanner.combine_and_return_events())
-    fresh_scan_events["JAPAN_FOUNDATION"] = (japan_foundation.combine_and_return_events())
+    fresh_scan_events["JAPAN_SOCIETY"] = (
+        japan_society_scanner.combine_and_return_events()
+    )
+    fresh_scan_events["JAPAN_EMBASSY"] = (
+        embassy_calendar_scanner.combine_and_return_events()
+    )
+    fresh_scan_events["JAPAN_FOUNDATION"] = japan_foundation.combine_and_return_events()
 
     new_events = comparator.find_new_events(fresh_scan_events)
 
@@ -41,14 +47,12 @@ def lambda_handler(event, context):
     slack_manager.slack_notifier(new_events)
     logger.info("Slack notified")
 
-    # send to sqs queue
-
     file_name = f"{prefix}/events_{datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}.json"
 
     s3_manager.upload_json_to_s3(fresh_scan_events, bucket_name, file_name)
     logger.info("Uploaded to S3")
 
-    slack_manager.send_to_hiru()
+    slack_manager.send_to_dev()
 
     return {
         "statusCode": 200,
