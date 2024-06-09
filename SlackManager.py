@@ -1,5 +1,6 @@
 import logging
-import os
+
+# import os
 import requests
 
 
@@ -9,11 +10,17 @@ logger.setLevel(logging.DEBUG)
 
 class SlackManager:
     def __init__(self):
-        self.slack_calendar_image = os.environ["SLACK_CALENDAR_IMAGE"]
-        self.slack_post_api = os.environ["SLACK_POST_API"]
-        self.pubilc_channel_id = os.environ["SLACK_CHANNEL_ID"]
-        self.token = os.environ["SLACK_TOKEN"]
-        self.developer_slack_id = os.environ["DEVELOPER_CHANNEL_SLACK_ID"]
+        # self.slack_calendar_image = os.environ["SLACK_CALENDAR_IMAGE"]
+        # self.slack_post_api = os.environ["SLACK_POST_API"]
+        # self.pubilc_channel_id = os.environ["SLACK_CHANNEL_ID"]
+        # self.token = os.environ["SLACK_TOKEN"]
+        # self.developer_channel_slack_id = os.environ["DEVELOPER_CHANNEL_SLACK_ID"]
+
+        self.slack_calendar_image = "https://cdn.iconscout.com/icon/free/png-512/free-calendar-766-267585.png?f=webp&w=512"
+        self.slack_post_api = "https://slack.com/api/chat.postMessage"
+        self.pubilc_channel_id = "C06UL744QER"
+        self.token = "xoxb-1230162479729-6710339098417-dAPi1WKWBSNAv0x1uQ8sS7xQ"
+        self.developer_channel_slack_id = "C06UL744QER"
 
     def _message_header_generator(self):
         logger.debug("Generating message header")
@@ -122,6 +129,7 @@ class SlackManager:
         event_time,
         event_price,
         event_url,
+        event_image_url,
     ):
         logger.debug("Generating message data")
         event_details_text = self._message_text_generator(
@@ -148,13 +156,23 @@ class SlackManager:
                         },
                     },
                     {
+                        "type": "image",
+                        "title": {
+                            "type": "plain_text",
+                            "text": "Event Image",
+                            "emoji": True,
+                        },
+                        "image_url": event_image_url,
+                        "alt_text": "Event Image",
+                    },
+                    {
                         "type": "section",
                         "text": {"type": "mrkdwn", "text": event_details_text},
-                        "accessory": {
-                            "type": "image",
-                            "image_url": logo_url,
-                            "alt_text": "calendar",
-                        },
+                        # "accessory": {
+                        #     "type": "image",
+                        #     "image_url": logo_url,
+                        #     "alt_text": "calendar",
+                        # },
                     },
                     {
                         "type": "actions",
@@ -196,6 +214,7 @@ class SlackManager:
         event_time,
         event_price,
         event_url,
+        event_image_url,
     ):
         logger.debug("Sending to slack")
         headers = self._message_header_generator()
@@ -207,6 +226,7 @@ class SlackManager:
             event_time,
             event_price,
             event_url,
+            event_image_url,
         )
 
         try:
@@ -233,6 +253,7 @@ class SlackManager:
             event_time = event["event_time"]
             event_price = event["event_price"]
             event_url = event["event_url"]
+            event_image_url = event["event_image_url"]
 
             self._send_to_slack(
                 event_source,
@@ -242,13 +263,14 @@ class SlackManager:
                 event_time,
                 event_price,
                 event_url,
+                event_image_url,
             )
 
     def send_to_dev(self):
         logger.debug("Sending to slack")
         headers = self._message_header_generator()
         data = {
-            "channel": self.pubilc_channel_id,
+            "channel": self.developer_channel_slack_id,
             "blocks": [
                 {
                     "type": "section",
@@ -276,7 +298,7 @@ class SlackManager:
         headers = self._message_header_generator()
 
         data = {
-            "channel": self.developer_slack_id,
+            "channel": self.developer_channel_slack_id,
             "blocks": [
                 {
                     "type": "section",

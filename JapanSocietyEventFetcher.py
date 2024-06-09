@@ -1,8 +1,9 @@
 import logging
+import pprint
 import requests
 from bs4 import BeautifulSoup
-
 from SlackManager import SlackManager
+import json
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -17,26 +18,23 @@ class JapanSocietyEventFetcher:
     def _scrape_events_from_url(self, url, existing_events):
         try:
             response = self.session.get(url)
-            logger.debug(f"URL: {url}")
-            logger.debug(f"Response text: {response.text}")
             response.raise_for_status()
-            logger.debug("Successfully fetched the webpage content.")
+            logger.debug(
+                f"Successfully fetched the webpage content from URL: {url}")
 
             soup = BeautifulSoup(response.text, "html.parser")
 
             event_cards = soup.find_all("div", class_="card")
             logger.debug(f"Number of event cards: {len(event_cards)}")
-            logger.debug(f"Event cards: {event_cards}")
 
             for card in event_cards:
                 event_details = self._extract_event_details(card)
-                logger.debug(f"Event details: {event_details}")
                 if event_details:
                     existing_events.append(event_details)
-                    logger.debug(f"Existing events: {existing_events}")
+                    logger.debug(f"Event details added: {event_details}")
         except Exception as scrape_error:
-            logger.error(f"Error fetching events from URL: {url}")
-            logger.error(f"Error: {scrape_error}")
+            logger.debug(f"Error fetching events from URL: {url}")
+            logger.debug(f"Error: {scrape_error}")
 
     def _extract_event_details(self, card):
         event_details = {
@@ -47,28 +45,41 @@ class JapanSocietyEventFetcher:
             "event_url": "URL not found",
             "event_date": "Date not found",
             "event_name": "Title not found",
+            "event_image_url": "Image URL not found",  # New key for image URL
         }
 
-        url_container = card.find("div", class_="border-top")
-        event_link = url_container.find("a", href=True) if url_container else None
-        event_details["event_url"] = (
-            event_link["href"] if event_link else event_details["event_url"]
-        )
+        base_url = "https://www.japansociety.org.uk/"
 
+        # Extract event URL
+        url_container = card.find("div", class_="js-news-image mb-3")
+        if url_container:
+            event_link = url_container.find("a", href=True)
+            if event_link:
+                event_details["event_url"] = event_link["href"]
+
+        # Extract event date
         event_date_span = card.find("span", class_="js-event-date")
-        event_details["event_date"] = (
-            event_date_span.text.strip()
-            if event_date_span
-            else event_details["event_date"]
-        )
+        if event_date_span:
+            event_details["event_date"] = event_date_span.text.strip()
 
+        # Extract event name
         event_name_span = card.find("span", class_="card-text")
-        event_details["event_name"] = (
-            event_name_span.text.strip()
-            if event_name_span
-            else event_details["event_name"]
-        )
+        if event_name_span:
+            event_details["event_name"] = event_name_span.text.strip()
 
+        # Extract event description
+        event_description = card.find("div", class_="js-listing-intro")
+        if event_description:
+            event_details["event_description"] = event_description.text.strip()
+
+        # Extract event image URL
+        image_container = card.find("div", class_="js-news-image")
+        if image_container:
+            img_tag = image_container.find("img")
+            if img_tag:
+                event_details["event_image_url"] = base_url + img_tag["src"]
+
+        # Check if essential details were found
         if (
             event_details["event_name"] == "Title not found"
             and event_details["event_date"] == "Date not found"
@@ -90,7 +101,6 @@ class JapanSocietyEventFetcher:
     def combine_and_return_events(self):
         existing_events = []
         self._scrape_events_from_url(self.base_url, existing_events)
-        logger.debug(f"Existing events: {existing_events}")
 
         initial_response = self.session.get(self.base_url)
         initial_response.raise_for_status()
@@ -99,11 +109,18 @@ class JapanSocietyEventFetcher:
 
         unique_page_urls = sorted(set(page_urls), key=page_urls.index)
         for page_url in unique_page_urls:
-            logger.debug(f"Page URL: {page_url}")
             if not page_url.startswith("http"):
                 page_url = self.base_url + page_url
             self._scrape_events_from_url(page_url, existing_events)
 
         if existing_events == []:
-            self.slack_manager.send_error_message("Issue with Japan Society event fetcher, no events found")
+            self.slack_manager.send_error_message(
+                "Issue with Japan Society event fetcher, no events found"
+            )
+        logger.debug(f"Existing_events: {existing_events}")
         return existing_events
+
+
+if __name__ == "__main__":
+    japansocietyeventfetcher = JapanSocietyEventFetcher()
+    pprint.pprint(japansocietyeventfetcher.combine_and_return_events())

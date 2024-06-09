@@ -1,12 +1,12 @@
 import logging
 import requests
 from bs4 import BeautifulSoup
-
+from random import choice
+from time import sleep
 from SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
 
 class EmbassyEventFetcher:
     def __init__(self, year):
@@ -14,6 +14,14 @@ class EmbassyEventFetcher:
         self.year = year
         self.short_year = str(year)[2:]
         self.slack_manager = SlackManager()
+        self.user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36"
+        ]
+        self.session = requests.Session()
 
     def combine_and_return_events(self):
         events = []
@@ -22,9 +30,19 @@ class EmbassyEventFetcher:
             month_str = str(month).zfill(2)
             url = f"{self.base_url}eve-list{self.short_year}-{month_str}.html"
             logger.debug(f"URL: {url}")
-            headers = {"User-Agent": "Mozilla/5.0"}
+            headers = {
+                "User-Agent": choice(self.user_agents),
+                "Accept-Language": "en-US,en;q=0.9",
+                "Referer": "https://www.google.com",
+                "Connection": "keep-alive",
+                "DNT": "1",  # Do Not Track Request Header
+                "Upgrade-Insecure-Requests": "1",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Cache-Control": "max-age=0",
+            }
             try:
-                response = requests.get(url, headers=headers)
+                response = self.session.get(url, headers=headers)
                 if response.status_code == 200:
                     response.encoding = (
                         "utf-8"
@@ -36,20 +54,22 @@ class EmbassyEventFetcher:
                     event_blocks = soup.findAll("div", class_="card-wrapper")
                     for block in event_blocks:
                         event_info = self._extract_event_info(block)
-                        events.append(event_info)
+                        if event_info:
+                            events.append(event_info)
                 else:
                     logger.error(
                         f"Failed to retrieve the webpage for {month_str}/{self.year}. Status code: {response.status_code}"
                     )
-            except Exception as e:
+            except requests.exceptions.RequestException as e:
                 logger.error(
                     f"An error occurred while fetching the events for {month_str}/{self.year}: {e}"
                 )
-                return []
-            
-        if events == []:
-            logger.error("Issue with Japan Society event fetcher, no events found")
-            self.slack_manager.send_error_message("Issue with Japan Society event fetcher, no events found")
+                continue
+            sleep(choice(range(1, 4)))  # Random sleep between 1 to 3 seconds
+
+        if not events:
+            logger.error("Issue with Embassy event fetcher, no events found")
+            self.slack_manager.send_error_message("Issue with Embassy event fetcher, no events found")
 
         return events
 
@@ -85,3 +105,7 @@ class EmbassyEventFetcher:
         logger.debug(f"Event details: {event_details}")
 
         return event_details
+
+if __name__ == "__main__":
+    embassyeventfetcher = EmbassyEventFetcher(2024)
+    print(embassyeventfetcher.combine_and_return_events())

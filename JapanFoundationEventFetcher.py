@@ -8,6 +8,7 @@ from SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class JapanFoundationEventFetcher:
@@ -18,12 +19,8 @@ class JapanFoundationEventFetcher:
 
     def _fetch_webpage_content(self):
         response = requests.get(self.whatson_url)
+        response.raise_for_status()  # Ensure we raise an error for bad responses
         return response.text
-
-    # @staticmethod
-    # def safe_get_href(element):
-    #     """Safely get the 'href' attribute of an element."""
-    #     return element['href'] if element and 'href' in element.attrs else None
 
     @staticmethod
     def _extract_date_info(text):
@@ -39,46 +36,55 @@ class JapanFoundationEventFetcher:
         try:
             for event_block in soup.find_all("div", style="border: solid 1px #666666;"):
                 title_tag = event_block.find("font", color="#FFFFFF")
-                title = (
-                    title_tag.get_text(strip=True) if title_tag else "Title Not Found"
-                )
+                title = title_tag.get_text(
+                    strip=True) if title_tag else "Title Not Found"
 
                 date_info_tag = event_block.find("td", width="100%")
-                date_info = (
-                    self._extract_date_info(date_info_tag.get_text(strip=True))
-                    if date_info_tag
-                    else "Date Info Not Found"
-                )
+                date_info = self._extract_date_info(date_info_tag.get_text(
+                    strip=True)) if date_info_tag else "Date Info Not Found"
+
+                venue = "Venue Not Found"
+                for td in event_block.find_all("td"):
+                    if "Venue:" in td.get_text():
+                        venue = td.find_next_sibling("td").get_text(strip=True)
+                        break
+
+                # Find the correct image URL by looking for images with alt=""
+                image_url = "Image Not Found"
+                for img_tag in event_block.find_all("img"):
+                    if 'alt' in img_tag.attrs and img_tag['alt'] == "":
+                        if img_tag['src'].startswith("http"):
+                            image_url = img_tag['src']
+                        else:
+                            image_url = f"{
+                                self.base_url}/{img_tag['src'].lstrip('../')}"
+                        break
 
                 anchor_tag = event_block.find_previous("a", id=True)
-                event_id = (
-                    anchor_tag["id"]
-                    if anchor_tag and "id" in anchor_tag.attrs
-                    else None
-                )
+                event_id = anchor_tag["id"] if anchor_tag and "id" in anchor_tag.attrs else None
 
-                event_url = (
-                    f"{self.whatson_url}#{event_id}"
-                    if event_id
-                    else "URL Not Available"
-                )
+                event_url = f"{self.whatson_url}#{
+                    event_id}" if event_id else "URL Not Available"
 
                 output_item = {
                     "event_source": "japan_foundation",
                     "event_name": title,
-                    "event_location": "Not available",
+                    "event_location": venue,
                     "event_date": date_info,
                     "event_time": "Not available",
                     "event_price": "Not available",
+                    "event_description": "Not available",
+                    "event_image_url": image_url,
                     "event_url": event_url,
                 }
 
                 events.append(output_item)
         except Exception as page_check_error:
-            logger.debug(f"Error in Japan Foundation event fetcher: {page_check_error}")
+            logger.debug(f"Error in Japan Foundation event fetcher: {
+                         page_check_error}")
             return []
 
-        if events == []:
+        if not events:
             self.slack_manager.send_error_message(
                 "Issue with Japan Foundation event fetcher, no events found"
             )

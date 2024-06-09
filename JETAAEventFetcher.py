@@ -27,7 +27,8 @@ class JETAAEventFetcher:
 
     def parse_events(self, html_content):
         soup = BeautifulSoup(html_content, "html.parser")
-        current_month_year = soup.find("h2", class_="currentmonth").text.strip()
+        current_month_year = soup.find(
+            "h2", class_="currentmonth").text.strip()
         logger.debug(f"Processing events for: {current_month_year}")
         events = soup.find_all("td", class_="containsevent")
 
@@ -35,7 +36,8 @@ class JETAAEventFetcher:
             self.process_event(event, current_month_year)
 
     def process_event(self, event, current_month_year):
-        day = event.find("h4").text.strip() if event.find("h4") else "Unknown day"
+        day = event.find("h4").text.strip() if event.find(
+            "h4") else "Unknown day"
         event_details = event.find("div", class_="popup")
 
         if event_details:
@@ -77,6 +79,7 @@ class JETAAEventFetcher:
                     "event_time": event_time,
                     "event_price": event_price,
                     "event_url": event_url,
+                    "event_image_url": "https://www.jetaa.org.uk/site/assets/files/1021/logo.460x0.png"
                 }
             )
 
@@ -84,14 +87,16 @@ class JETAAEventFetcher:
         self.events.clear()  # Clear existing events before processing a new year
         try:
             for month in range(1, 13):
-                url = f"{self.BASE_URL}{self.EVENTS_PREFIX}{self.year}/{month}/"
+                url = f"{self.BASE_URL}{
+                    self.EVENTS_PREFIX}{self.year}/{month}/"
                 logger.debug(f"\nProcessing month: {month}")
                 self.fetch_events(url)
         except Exception as monthly_processor_error:
             logger.error(f"Error: {monthly_processor_error}")
             return []
-        
+
         if self.events == []:
-            self.slack_manager.send_error_message("Issue with JETAA event fetcher, no events found")
+            self.slack_manager.send_error_message(
+                "Issue with JETAA event fetcher, no events found")
 
         return self.events
