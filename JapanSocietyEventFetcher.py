@@ -3,7 +3,6 @@ import pprint
 import requests
 from bs4 import BeautifulSoup
 from SlackManager import SlackManager
-import json
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
