@@ -71,12 +71,21 @@ class JapanSocietyEventFetcher:
         if event_description:
             event_details["event_description"] = event_description.text.strip()
 
-        # Extract event image URL
-        image_container = card.find("div", class_="js-news-image")
-        if image_container:
-            img_tag = image_container.find("img")
-            if img_tag:
-                event_details["event_image_url"] = base_url + img_tag["src"]
+        # # Extract event image["event_image_url"] = base_url + img_tag["src"]
+
+        # Fetch additional details from the event URL
+        if event_details["event_url"] != "URL not found":
+            event_page = requests.get(event_details["event_url"])
+            if event_page.status_code == 200:
+                event_soup = BeautifulSoup(event_page.content, 'html.parser')
+                with open("event_page.html", "w") as f:
+                    f.write(event_soup.prettify())
+                
+                # Extract event image URL matching the event name
+                img_tag = event_soup.find("img", alt=event_details["event_name"])
+                if img_tag and "src" in img_tag.attrs:
+                    event_details["event_image_url"] = base_url + img_tag["src"]
+
 
         # Check if essential details were found
         if (

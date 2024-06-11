@@ -1,6 +1,5 @@
 import logging
-
-# import os
+import os
 import requests
 
 
@@ -10,17 +9,11 @@ logger.setLevel(logging.DEBUG)
 
 class SlackManager:
     def __init__(self):
-        # self.slack_calendar_image = os.environ["SLACK_CALENDAR_IMAGE"]
-        # self.slack_post_api = os.environ["SLACK_POST_API"]
-        # self.pubilc_channel_id = os.environ["SLACK_CHANNEL_ID"]
-        # self.token = os.environ["SLACK_TOKEN"]
-        # self.developer_channel_slack_id = os.environ["DEVELOPER_CHANNEL_SLACK_ID"]
-
-        self.slack_calendar_image = "https://cdn.iconscout.com/icon/free/png-512/free-calendar-766-267585.png?f=webp&w=512"
-        self.slack_post_api = "https://slack.com/api/chat.postMessage"
-        self.pubilc_channel_id = "C06UL744QER"
-        self.token = "xoxb-1230162479729-6710339098417-dAPi1WKWBSNAv0x1uQ8sS7xQ"
-        self.developer_channel_slack_id = "C06UL744QER"
+        self.slack_calendar_image = os.environ["SLACK_CALENDAR_IMAGE"]
+        self.slack_post_api = os.environ["SLACK_POST_API"]
+        self.pubilc_channel_id = os.environ["SLACK_CHANNEL_ID"]
+        self.token = os.environ["SLACK_TOKEN"]
+        self.developer_channel_slack_id = os.environ["DEVELOPER_CHANNEL_SLACK_ID"]
 
     def _message_header_generator(self):
         logger.debug("Generating message header")
@@ -33,7 +26,8 @@ class SlackManager:
             logger.debug("Message header generated")
         except Exception as message_header_generator_error:
             logger.error(
-                f"Error generating message header: {message_header_generator_error}"
+                f"Error generating message header: {
+                    message_header_generator_error}"
             )
         return headers
 
@@ -95,7 +89,8 @@ class SlackManager:
 
         except Exception as text_generator_error:
             logger.error(f"Error generating text: {text_generator_error}")
-            self.send_error_message(f"Error generating text: {text_generator_error}")
+            self.send_error_message(f"Error generating text: {
+                                    text_generator_error}")
 
         return event_details_text
 
@@ -197,10 +192,12 @@ class SlackManager:
             logger.debug("Message data generated")
         except Exception as message_data_generator_error:
             logger.error(
-                f"Error generating message data: {message_data_generator_error}"
+                f"Error generating message data: {
+                    message_data_generator_error}"
             )
             self.send_error_message(
-                f"Error generating message data: {message_data_generator_error}"
+                f"Error generating message data: {
+                    message_data_generator_error}"
             )
 
         return data
@@ -231,12 +228,14 @@ class SlackManager:
 
         try:
             logger.debug("Posting slack message")
-            response = requests.post(self.slack_post_api, headers=headers, json=data)
+            response = requests.post(
+                self.slack_post_api, headers=headers, json=data)
             logger.debug("Message sent successfully!")
             logger.debug(f"Response: {response}")
         except Exception as post_error:
             logger.error(f"Error posting message to slack {post_error}")
-            self.send_error_message(f"Error posting message to slack {post_error}")
+            self.send_error_message(
+                f"Error posting message to slack {post_error}")
             return False
 
         return True
@@ -284,11 +283,13 @@ class SlackManager:
         }
         try:
             logger.debug("Posting slack message")
-            response = requests.post(self.slack_post_api, headers=headers, json=data)
+            response = requests.post(
+                self.slack_post_api, headers=headers, json=data)
             logger.debug("Message sent successfully!")
             logger.debug(f"Response: {response}")
         except Exception as post_error:
-            logger.error(f"Error posting successful run message to slack {post_error}")
+            logger.error(
+                f"Error posting successful run message to slack {post_error}")
             return False
 
         return True
@@ -312,7 +313,8 @@ class SlackManager:
         }
         try:
             logger.debug("Posting slack message")
-            response = requests.post(self.slack_post_api, headers=headers, json=data)
+            response = requests.post(
+                self.slack_post_api, headers=headers, json=data)
             logger.debug("Message sent successfully!")
             logger.debug(f"Response: {response}")
         except Exception as post_error:
