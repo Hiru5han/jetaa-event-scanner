@@ -1,4 +1,5 @@
 import logging
+
 from S3Manager import S3Manager
 from SlackManager import SlackManager
 
@@ -65,8 +66,12 @@ class Comparator:
                             new_events.append(fresh_scan_event)
                         except Exception as event_error:
                             logger.error(f"Error parsing new event: {event_error}")
-                            self.slack_manager.send_error_message(f"Error parsing new event: {event_error}")
+                            self.slack_manager.send_error_message(
+                                f"Error parsing new event: {event_error}"
+                            )
         except Exception as event_compare_error:
             logger.error(f"Error comparing old events to new: {event_compare_error}")
-            self.slack_manager.send_error_message(f"Error comparing old events to new: {event_compare_error}")
+            self.slack_manager.send_error_message(
+                f"Error comparing old events to new: {event_compare_error}"
+            )
         return new_events

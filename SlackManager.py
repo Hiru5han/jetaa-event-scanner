@@ -1,7 +1,7 @@
 import logging
 import os
-import requests
 
+import requests
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -11,7 +11,7 @@ class SlackManager:
     def __init__(self):
         self.slack_calendar_image = os.environ["SLACK_CALENDAR_IMAGE"]
         self.slack_post_api = os.environ["SLACK_POST_API"]
-        self.pubilc_channel_id = os.environ["SLACK_CHANNEL_ID"]
+        self.public_channel_id = os.environ["SLACK_CHANNEL_ID"]
         self.token = os.environ["SLACK_TOKEN"]
         self.developer_channel_slack_id = os.environ["DEVELOPER_CHANNEL_SLACK_ID"]
 
@@ -26,8 +26,7 @@ class SlackManager:
             logger.debug("Message header generated")
         except Exception as message_header_generator_error:
             logger.error(
-                f"Error generating message header: {
-                    message_header_generator_error}"
+                f"Error generating message header: {message_header_generator_error}"
             )
         return headers
 
@@ -89,8 +88,7 @@ class SlackManager:
 
         except Exception as text_generator_error:
             logger.error(f"Error generating text: {text_generator_error}")
-            self.send_error_message(f"Error generating text: {
-                                    text_generator_error}")
+            self.send_error_message(f"Error generating text: {text_generator_error}")
 
         return event_details_text
 
@@ -140,7 +138,7 @@ class SlackManager:
 
         try:
             data = {
-                "channel": self.pubilc_channel_id,
+                "channel": self.public_channel_id,
                 "blocks": [
                     {
                         "type": "header",
@@ -192,12 +190,10 @@ class SlackManager:
             logger.debug("Message data generated")
         except Exception as message_data_generator_error:
             logger.error(
-                f"Error generating message data: {
-                    message_data_generator_error}"
+                f"Error generating message data: {message_data_generator_error}"
             )
             self.send_error_message(
-                f"Error generating message data: {
-                    message_data_generator_error}"
+                f"Error generating message data: {message_data_generator_error}"
             )
 
         return data
@@ -228,14 +224,12 @@ class SlackManager:
 
         try:
             logger.debug("Posting slack message")
-            response = requests.post(
-                self.slack_post_api, headers=headers, json=data)
+            response = requests.post(self.slack_post_api, headers=headers, json=data)
             logger.debug("Message sent successfully!")
             logger.debug(f"Response: {response}")
         except Exception as post_error:
             logger.error(f"Error posting message to slack {post_error}")
-            self.send_error_message(
-                f"Error posting message to slack {post_error}")
+            self.send_error_message(f"Error posting message to slack {post_error}")
             return False
 
         return True
@@ -283,13 +277,11 @@ class SlackManager:
         }
         try:
             logger.debug("Posting slack message")
-            response = requests.post(
-                self.slack_post_api, headers=headers, json=data)
+            response = requests.post(self.slack_post_api, headers=headers, json=data)
             logger.debug("Message sent successfully!")
             logger.debug(f"Response: {response}")
         except Exception as post_error:
-            logger.error(
-                f"Error posting successful run message to slack {post_error}")
+            logger.error(f"Error posting successful run message to slack {post_error}")
             return False
 
         return True
@@ -313,8 +305,7 @@ class SlackManager:
         }
         try:
             logger.debug("Posting slack message")
-            response = requests.post(
-                self.slack_post_api, headers=headers, json=data)
+            response = requests.post(self.slack_post_api, headers=headers, json=data)
             logger.debug("Message sent successfully!")
             logger.debug(f"Response: {response}")
         except Exception as post_error:

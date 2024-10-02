@@ -1,6 +1,7 @@
 import logging
 import pprint
 import re
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -36,12 +37,16 @@ class JapanFoundationEventFetcher:
         try:
             for event_block in soup.find_all("div", style="border: solid 1px #666666;"):
                 title_tag = event_block.find("font", color="#FFFFFF")
-                title = title_tag.get_text(
-                    strip=True) if title_tag else "Title Not Found"
+                title = (
+                    title_tag.get_text(strip=True) if title_tag else "Title Not Found"
+                )
 
                 date_info_tag = event_block.find("td", width="100%")
-                date_info = self._extract_date_info(date_info_tag.get_text(
-                    strip=True)) if date_info_tag else "Date Info Not Found"
+                date_info = (
+                    self._extract_date_info(date_info_tag.get_text(strip=True))
+                    if date_info_tag
+                    else "Date Info Not Found"
+                )
 
                 venue = "Venue Not Found"
                 for td in event_block.find_all("td"):
@@ -52,19 +57,27 @@ class JapanFoundationEventFetcher:
                 # Find the correct image URL by looking for images with alt=""
                 image_url = "Image Not Found"
                 for img_tag in event_block.find_all("img"):
-                    if 'alt' in img_tag.attrs and img_tag['alt'] == "":
-                        if img_tag['src'].startswith("http"):
-                            image_url = img_tag['src']
+                    if "alt" in img_tag.attrs and img_tag["alt"] == "":
+                        if img_tag["src"].startswith("http"):
+                            image_url = img_tag["src"]
                         else:
-                            image_url = f"{
-                                self.base_url}/{img_tag['src'].lstrip('../')}"
+                            image_url = (
+                                f"{self.base_url}/{img_tag['src'].lstrip('../')}"
+                            )
                         break
 
                 anchor_tag = event_block.find_previous("a", id=True)
-                event_id = anchor_tag["id"] if anchor_tag and "id" in anchor_tag.attrs else None
+                event_id = (
+                    anchor_tag["id"]
+                    if anchor_tag and "id" in anchor_tag.attrs
+                    else None
+                )
 
-                event_url = f"{self.whatson_url}#{
-                    event_id}" if event_id else "URL Not Available"
+                event_url = (
+                    f"{self.whatson_url}#{event_id}"
+                    if event_id
+                    else "URL Not Available"
+                )
 
                 output_item = {
                     "event_source": "japan_foundation",
@@ -80,8 +93,7 @@ class JapanFoundationEventFetcher:
 
                 events.append(output_item)
         except Exception as page_check_error:
-            logger.debug(f"Error in Japan Foundation event fetcher: {
-                         page_check_error}")
+            logger.debug(f"Error in Japan Foundation event fetcher: {page_check_error}")
             return []
 
         if not events:

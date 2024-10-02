@@ -1,9 +1,10 @@
 import csv
 import io
 import json
-import sys
-import boto3
 import logging
+import sys
+
+import boto3
 from botocore.exceptions import NoCredentialsError
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class S3Manager:
         return json_object
 
     def _csv_formatter(self, events_collected):
-        logger.debug("Formatting csv before puttting to S3")
+        logger.debug("Formatting csv before putting to S3")
         try:
             with io.StringIO() as csv_file:
                 writer = csv.writer(
@@ -73,7 +74,7 @@ class S3Manager:
         encoded_csv_content = self._csv_formatter(events_collected)
 
         if not encoded_csv_content:
-            logger.debug("Formatter returned None, exitting")
+            logger.debug("Formatter returned None, exiting")
             sys.exit(1)
 
         try:

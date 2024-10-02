@@ -1,14 +1,16 @@
 import json
+import logging
 from datetime import datetime
+
 from Comparator import Comparator
-from JETAAEventFetcher import JETAAEventFetcher
-from JapanHouseEventFetcher import JapanHouseEventFetcher
-from JapanSocietyEventFetcher import JapanSocietyEventFetcher
+
 # from EmbassyEventFetcher import EmbassyEventFetcher
 from JapanFoundationEventFetcher import JapanFoundationEventFetcher
+from JapanHouseEventFetcher import JapanHouseEventFetcher
+from JapanSocietyEventFetcher import JapanSocietyEventFetcher
+from JETAAEventFetcher import JETAAEventFetcher
 from S3Manager import S3Manager
 from SlackManager import SlackManager
-import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -47,8 +49,7 @@ def lambda_handler(event, context):
     slack_manager.slack_notifier(new_events)
     logger.info("Slack notified")
 
-    file_name = f"{
-        prefix}/events_{datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}.json"
+    file_name = f"{prefix}/events_{datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}.json"
 
     s3_manager.upload_json_to_s3(fresh_scan_events, bucket_name, file_name)
     logger.info("Uploaded to S3")

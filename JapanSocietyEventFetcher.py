@@ -1,7 +1,9 @@
+import json
 import logging
-import pprint
+
 import requests
 from bs4 import BeautifulSoup
+
 from SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
@@ -18,8 +20,7 @@ class JapanSocietyEventFetcher:
         try:
             response = self.session.get(url)
             response.raise_for_status()
-            logger.debug(
-                f"Successfully fetched the webpage content from URL: {url}")
+            logger.debug(f"Successfully fetched the webpage content from URL: {url}")
 
             soup = BeautifulSoup(response.text, "html.parser")
 
@@ -32,8 +33,8 @@ class JapanSocietyEventFetcher:
                     existing_events.append(event_details)
                     logger.debug(f"Event details added: {event_details}")
         except Exception as scrape_error:
-            logger.debug(f"Error fetching events from URL: {url}")
-            logger.debug(f"Error: {scrape_error}")
+            logger.error(f"Error fetching events from URL: {url}")
+            logger.error(f"Error: {scrape_error}")
 
     def _extract_event_details(self, card):
         event_details = {
@@ -77,15 +78,14 @@ class JapanSocietyEventFetcher:
         if event_details["event_url"] != "URL not found":
             event_page = requests.get(event_details["event_url"])
             if event_page.status_code == 200:
-                event_soup = BeautifulSoup(event_page.content, 'html.parser')
+                event_soup = BeautifulSoup(event_page.content, "html.parser")
                 with open("event_page.html", "w") as f:
                     f.write(event_soup.prettify())
-                
+
                 # Extract event image URL matching the event name
                 img_tag = event_soup.find("img", alt=event_details["event_name"])
                 if img_tag and "src" in img_tag.attrs:
                     event_details["event_image_url"] = base_url + img_tag["src"]
-
 
         # Check if essential details were found
         if (
@@ -125,10 +125,12 @@ class JapanSocietyEventFetcher:
             self.slack_manager.send_error_message(
                 "Issue with Japan Society event fetcher, no events found"
             )
-        logger.debug(f"Existing_events: {existing_events}")
+        logger.error(f"Existing_events: {existing_events}")
         return existing_events
 
 
 if __name__ == "__main__":
     japansocietyeventfetcher = JapanSocietyEventFetcher()
-    pprint.pprint(japansocietyeventfetcher.combine_and_return_events())
+    logger.info(
+        json.dumps(japansocietyeventfetcher.combine_and_return_events(), indent=4)
+    )
