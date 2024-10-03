@@ -1,12 +1,15 @@
 import logging
-import requests
-from bs4 import BeautifulSoup
 from random import choice
 from time import sleep
+
+import requests
+from bs4 import BeautifulSoup
+
 from SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
 
 class EmbassyEventFetcher:
     def __init__(self, year):
@@ -19,7 +22,7 @@ class EmbassyEventFetcher:
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36"
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36",
         ]
         self.session = requests.Session()
 
@@ -33,16 +36,27 @@ class EmbassyEventFetcher:
             headers = {
                 "User-Agent": choice(self.user_agents),
                 "Accept-Language": "en-US,en;q=0.9",
-                "Referer": "https://www.google.com",
+                "Referer": "https://www.uk.emb-japan.go.jp/JAPANUKEvent/index.html",  # More appropriate referrer
                 "Connection": "keep-alive",
-                "DNT": "1",  # Do Not Track Request Header
+                "DNT": "1",
                 "Upgrade-Insecure-Requests": "1",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                 "Accept-Encoding": "gzip, deflate, br",
                 "Cache-Control": "max-age=0",
             }
+            proxies = {
+                "http": "http://4.158.175.186:8080",  # Replace with actual proxy details
+                "https": "http://85.210.203.188:8080",  # Replace with actual proxy details
+            }
+            cookies = {
+                "CookieName1": "CookieValue1",
+                "CookieName2": "CookieValue2",
+            }
+
             try:
-                response = self.session.get(url, headers=headers)
+                response = self.session.get(
+                    url, headers=headers, proxies=proxies, cookies=cookies
+                )
                 if response.status_code == 200:
                     response.encoding = (
                         "utf-8"
@@ -65,11 +79,13 @@ class EmbassyEventFetcher:
                     f"An error occurred while fetching the events for {month_str}/{self.year}: {e}"
                 )
                 continue
-            sleep(choice(range(1, 4)))  # Random sleep between 1 to 3 seconds
+            sleep(choice(range(2, 6)))  # Random sleep between 1 to 3 seconds
 
         if not events:
             logger.error("Issue with Embassy event fetcher, no events found")
-            self.slack_manager.send_error_message("Issue with Embassy event fetcher, no events found")
+            self.slack_manager.send_error_message(
+                "Issue with Embassy event fetcher, no events found"
+            )
 
         return events
 
@@ -105,6 +121,7 @@ class EmbassyEventFetcher:
         logger.debug(f"Event details: {event_details}")
 
         return event_details
+
 
 if __name__ == "__main__":
     embassyeventfetcher = EmbassyEventFetcher(2024)
