@@ -1,8 +1,6 @@
 import json
 import logging
-import pprint
 import re
-
 import requests
 from bs4 import BeautifulSoup
 
@@ -15,16 +13,14 @@ logger.setLevel(logging.DEBUG)
 class JapanHouseEventFetcher:
     def __init__(self):
         self.url = "https://www.japanhouselondon.uk/whats-on/"
-        self.events_data = None
-        self.categories = ["posts"]
         self.event_source = "japan_house"
         self.slack_manager = SlackManager()
+        self.events_data = []
 
     def _fetch_page_content(self):
         response = requests.get(self.url)
         logger.debug(f"URL: {self.url}")
         logger.debug(f"Status code: {response.status_code}")
-        logger.debug(f"Response text: {response.text}")
 
         if response.status_code == 200:
             logger.debug("Successfully fetched the webpage content.")
@@ -33,101 +29,83 @@ class JapanHouseEventFetcher:
             logger.error(
                 f"Failed to fetch the {self.event_source} webpage content. Status code: {response.status_code}"
             )
-            return False
+            return None
 
-    def _parse_html_for_json(self, html_content):
-        try:
-            soup = BeautifulSoup(html_content, "html.parser")
-            logger.debug(f"Japan House Soup: {soup}")
-            component_loader_tag = soup.find(
-                "component-loader", {"name": "ArchiveWhatsOn"}
-            )
-            if component_loader_tag and "v-bind" in component_loader_tag.attrs:
-                json_string = component_loader_tag["v-bind"]
-                # Replace HTML entities with actual quotes
-                json_string = json_string.replace("&quot;", '"')
-                self.events_data = json.loads(json_string)
-            else:
-                logger.error(
-                    "Component loader tag not found or does not contain 'v-bind' attribute."
-                )
-                self.events_data = []
-        except Exception as parsing_error:
-            logger.error(
-                f"Error parsing HTML content for {self.event_source}: {parsing_error}"
-            )
-            self.events_data = []
+    def _parse_events_from_vbind(self, html_content):
+        soup = BeautifulSoup(html_content, "html.parser")
 
-    def _extract_events(self):
-        if self.events_data is None:
-            logger.error(
-                "Events data is not initialized. Make sure to parse HTML content first."
-            )
-            return []
+        # Find the archive-whats-on component and its v-bind attribute
+        archive_whats_on = soup.find("archive-whats-on")
+        if archive_whats_on and "v-bind" in archive_whats_on.attrs:
+            vbind_content = archive_whats_on["v-bind"]
+            # Replace HTML entities with actual quotes
+            vbind_content = vbind_content.replace("&quot;", '"')
+            try:
+                event_data_json = json.loads(vbind_content)
+                logger.debug(f"Extracted JSON: {event_data_json}")
+                return event_data_json
+            except json.JSONDecodeError as e:
+                logger.error(f"Error decoding JSON from v-bind: {e}")
+                return None
+        else:
+            logger.error("Could not find the 'v-bind' attribute in 'archive-whats-on'.")
+            return None
 
-        try:
-            extracted_events = []
-            for category in self.categories:
-                logger.debug(f"Extracting events for category: {self.categories}")
-                logger.debug(f"Category: {category}")
-                posts = self.events_data.get(category, [])
-                logger.debug(f"Number of posts: {len(posts)}")
-                logger.debug(f"Posts: {posts}")
+    def _extract_event_details(self, event_json):
+        extracted_events = []
 
-                for post in posts:
-                    logger.debug(f"Posts: {posts}")
-                    logger.debug(f"Extracting event info for post: {post}")
+        if "posts" in event_json:
+            for post in event_json["posts"]:
+                # Extract image URL and clean it from size suffixes if present
+                image_url = post.get("image", {}).get("url", "")
+                if image_url:
+                    # Remove any size suffixes from the image URL
+                    image_url = re.sub(r"-\d+x\d+(?=\.\w{3,4}$)", "", image_url)
 
-                    image_url = post.get("image", {}).get("url")
-                    if image_url:
-                        # Remove any size suffixes from the image URL
-                        image_url = re.sub(r"-\d+x\d+(?=\.\w{3,4}$)", "", image_url)
+                # Construct the event_dict with the original keys
+                event_dict = {
+                    "event_source": self.event_source,
+                    "event_name": post.get("title"),
+                    "event_location": post.get("event_location"),
+                    "event_date": post.get("date_range"),
+                    "event_time": "Not available",
+                    "event_price": "Not available",
+                    "event_url": post.get("url"),
+                    "event_image_url": image_url,
+                }
 
-                    event_dict = {
-                        "event_source": self.event_source,
-                        "event_name": post.get("title"),
-                        "event_location": post.get("event_location"),
-                        "event_date": post.get("date_range"),
-                        "event_time": "Not available",
-                        "event_price": "Not available",
-                        "event_url": post.get("url"),
-                        "event_image_url": image_url,
-                    }
-                    logger.debug(f"Event details: {event_dict}")
-                    extracted_events.append(event_dict)
-                    logger.debug(f"Extracted events: {extracted_events}")
-        except Exception as extract_events_error:
-            logger.error(
-                f"Error extracting events from {self.event_source}: {extract_events_error}"
-            )
-            return []
+                logger.debug(f"Extracted event: {event_dict}")
+                extracted_events.append(event_dict)
+        else:
+            logger.error("No 'posts' data found in JSON.")
         return extracted_events
 
     def combine_and_return_events(self):
-        events_collected = []
         html_content = self._fetch_page_content()
         if not html_content:
+            logger.error("No HTML content to parse.")
             return []
 
-        logger.debug(f"HTML content: {html_content}")
-        self._parse_html_for_json(html_content)
+        # Parse the v-bind JSON from the archive-whats-on component
+        event_json = self._parse_events_from_vbind(html_content)
+        if event_json is None:
+            logger.error("Failed to parse events from JSON.")
+            return []
 
-        website_events = self._extract_events()
-        logger.debug(f"Website events: {website_events}")
+        # Extract event details from the parsed JSON
+        self.events_data = self._extract_event_details(event_json)
 
-        combined_events = events_collected + website_events
-        logger.debug(f"Combined events: {combined_events}")
-
-        if combined_events == []:
+        if not self.events_data:
             logger.error("Issue with Japan House event fetcher, no events found")
             self.slack_manager.send_error_message(
                 "Issue with Japan House event fetcher, no events found"
             )
 
-        return combined_events
+        return self.events_data
 
 
 if __name__ == "__main__":
     scraper = JapanHouseEventFetcher()
     events = scraper.combine_and_return_events()
-    pprint.pprint(events)
+    for event in events:
+        print(event)
