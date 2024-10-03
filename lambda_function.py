@@ -3,8 +3,6 @@ import logging
 from datetime import datetime
 
 from Comparator import Comparator
-
-# from EmbassyEventFetcher import EmbassyEventFetcher
 from JapanFoundationEventFetcher import JapanFoundationEventFetcher
 from JapanHouseEventFetcher import JapanHouseEventFetcher
 from JapanSocietyEventFetcher import JapanSocietyEventFetcher
