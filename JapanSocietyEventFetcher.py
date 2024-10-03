@@ -79,9 +79,6 @@ class JapanSocietyEventFetcher:
             event_page = requests.get(event_details["event_url"])
             if event_page.status_code == 200:
                 event_soup = BeautifulSoup(event_page.content, "html.parser")
-                with open("event_page.html", "w") as f:
-                    f.write(event_soup.prettify())
-
                 # Extract event image URL matching the event name
                 img_tag = event_soup.find("img", alt=event_details["event_name"])
                 if img_tag and "src" in img_tag.attrs:
