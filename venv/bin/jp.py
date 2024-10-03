@@ -1,4 +1,4 @@
-#!/Users/hiru/Documents/GitHub/jetaa-event-scanner/venv/bin/python3.12
+#!/Users/hiru/Documents/GitHub/jetaa-event-scanner/venv/bin/python
 
 import sys
 import json

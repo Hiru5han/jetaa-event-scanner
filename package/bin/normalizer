@@ -1,4 +1,4 @@
-#!/Users/hiru/.pyenv/versions/3.11.6/bin/python3.11
+#!/Users/hiru/Documents/GitHub/jetaa-event-scanner/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -1,0 +1,7 @@
+pip freeze > requirements.txt
+pip install -r requirements.txt --target ./package
+zip -r function.zip . -x "__pycache__/*" "venv/*" ".git/*"
+cd package
+zip -r ../function.zip .
+..
+zip -g function.zip *.py event_source_logos/*
