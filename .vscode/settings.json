@@ -1,18 +1,16 @@
 {
   "cSpell.words": [
-    "arcname",
     "boto",
     "botocore",
+    "containsevent",
+    "currentmonth",
     "embassyeventfetcher",
-    "hiru",
     "japansocietyeventfetcher",
     "JETAA",
     "KHTML",
-    "levelname",
-    "pycache",
-    "Slackbot",
-    "zipdir",
-    "zipf",
-    "ziph"
+    "mrkdwn",
+    "Referer",
+    "vbind",
+    "whatson"
   ]
 }
