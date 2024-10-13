@@ -1,0 +1,6 @@
+2024-10-13 06:41:22,999 - __main__ - DEBUG - []
+2024-10-13 06:41:22,999 - __main__ - INFO - Slack notified
+2024-10-13 06:41:23,293 - __main__ - INFO - Uploaded to S3
+2024-10-13 06:41:23,294 - __main__ - INFO - Today is Sunday. Performing weekly scan.
+2024-10-13 06:41:24,286 - __main__ - DEBUG - Weekly new events: []
+2024-10-13 06:41:24,356 - __main__ - INFO - Uploaded weekly events to S3: as-json/weekly/events_2024-10-13.json
