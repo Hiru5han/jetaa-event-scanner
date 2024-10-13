@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime, timedelta, timezone
 import io
 import json
 import logging
@@ -7,8 +8,8 @@ import sys
 import boto3
 from botocore.exceptions import NoCredentialsError
 
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class S3Manager:
@@ -22,7 +23,7 @@ class S3Manager:
             json_files = [
                 obj
                 for obj in bucket.objects.filter(Prefix=prefix)
-                if obj.key.endswith(".json")
+                if obj.key.endswith(".json") and "weekly" not in obj.key
             ]
             if not json_files:
                 return "No JSON files found with the specified prefix."
@@ -37,6 +38,37 @@ class S3Manager:
             return False
         except Exception as latest_json_get_error:
             logger.debug(f"An error occurred: {latest_json_get_error}")
+            return False
+
+        return json_object
+
+    def get_json_file_from_week_ago(self, bucket_name, prefix):
+        """Returns the JSON file from S3 that was modified a week ago."""
+        bucket = self.s3_resource.Bucket(bucket_name)
+        try:
+            # Make the current datetime timezone-aware
+            one_week_ago = datetime.now(timezone.utc) - timedelta(weeks=1)
+            json_files = [
+                obj
+                for obj in bucket.objects.filter(Prefix=prefix)
+                if obj.key.endswith(".json")
+            ]
+            if not json_files:
+                return "No JSON files found with the specified prefix."
+
+            # Find the file closest to one week ago
+            week_old_file = min(
+                json_files,
+                key=lambda x: abs((x.last_modified - one_week_ago).total_seconds()),
+            )
+
+            json_object = json.load(bucket.Object(week_old_file.key).get()["Body"])
+            logger.debug(f"JSON object from a week ago: {json_object}")
+        except NoCredentialsError:
+            logger.debug("No AWS credentials found. Please configure them to proceed.")
+            return False
+        except Exception as e:
+            logger.debug(f"An error occurred while fetching week-old JSON: {e}")
             return False
 
         return json_object
@@ -106,3 +138,12 @@ class S3Manager:
             return False
 
         return True
+
+
+# if __name__ == "__main__":
+#     s3_manager = S3Manager()
+#     print(
+#         s3_manager.get_json_file_from_week_ago(
+#             bucket_name="jetaa-events", prefix="as-json"
+#         )
+#     )

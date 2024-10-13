@@ -3,8 +3,8 @@ import logging
 from S3Manager import S3Manager
 from SlackManager import SlackManager
 
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class Comparator:
@@ -74,4 +74,54 @@ class Comparator:
             self.slack_manager.send_error_message(
                 f"Error comparing old events to new: {event_compare_error}"
             )
+        return new_events
+
+    def load_week_old_events(self):
+        """Load events from a week ago."""
+        logger.debug("Loading week-old events")
+        week_old_events = self.s3_manager.get_json_file_from_week_ago(
+            self.bucket_name, self.prefix
+        )
+        logger.debug(f"Loaded week-old events: {week_old_events}")
+        return week_old_events
+
+    def compare_with_week_old_events(self, fresh_scan_events):
+        """Compare fresh scan with week-old scan to find new events."""
+        old_scan_events = self.load_week_old_events()
+        new_events = []
+        logger.debug("Comparing fresh scan with week-old events")
+
+        if not old_scan_events:
+            logger.error("No old events found to compare.")
+            return new_events
+
+        old_event_ids = {
+            (
+                e["event_source"],
+                e["event_name"],
+                e["event_location"],
+                e["event_date"],
+                e["event_time"],
+                e["event_price"],
+                e["event_url"],
+            )
+            for events in old_scan_events.values()
+            for e in events
+        }
+
+        for source, events in fresh_scan_events.items():
+            for event in events:
+                event_id = (
+                    event["event_source"],
+                    event["event_name"],
+                    event["event_location"],
+                    event["event_date"],
+                    event["event_time"],
+                    event["event_price"],
+                    event["event_url"],
+                )
+                if event_id not in old_event_ids:
+                    logger.debug(f"New event found: {event}")
+                    new_events.append(event)
+
         return new_events
