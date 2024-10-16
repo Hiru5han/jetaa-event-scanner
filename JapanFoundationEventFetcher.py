@@ -8,8 +8,6 @@ from bs4 import BeautifulSoup
 from SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-logging.basicConfig(level=logging.DEBUG)
 
 
 class JapanFoundationEventFetcher:

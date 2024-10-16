@@ -88,40 +88,52 @@ class Comparator:
     def compare_with_week_old_events(self, fresh_scan_events):
         """Compare fresh scan with week-old scan to find new events."""
         old_scan_events = self.load_week_old_events()
-        new_events = []
+        weekly_new_events = []
         logger.debug("Comparing fresh scan with week-old events")
 
         if not old_scan_events:
             logger.error("No old events found to compare.")
-            return new_events
+            return weekly_new_events
 
-        old_event_ids = {
-            (
-                e["event_source"],
-                e["event_name"],
-                e["event_location"],
-                e["event_date"],
-                e["event_time"],
-                e["event_price"],
-                e["event_url"],
-            )
-            for events in old_scan_events.values()
-            for e in events
-        }
-
-        for source, events in fresh_scan_events.items():
-            for event in events:
-                event_id = (
-                    event["event_source"],
-                    event["event_name"],
-                    event["event_location"],
-                    event["event_date"],
-                    event["event_time"],
-                    event["event_price"],
-                    event["event_url"],
+        old_scan_event_source_ids = {}
+        for old_scan_source, old_scan_events in old_scan_events.items():
+            old_scan_event_set = set()
+            for old_scan_event in old_scan_events:
+                old_scan_event_id = (
+                    old_scan_event["event_source"],
+                    old_scan_event["event_name"],
+                    old_scan_event["event_location"],
+                    old_scan_event["event_date"],
+                    old_scan_event["event_time"],
+                    old_scan_event["event_price"],
+                    old_scan_event["event_url"],
                 )
-                if event_id not in old_event_ids:
-                    logger.debug(f"New event found: {event}")
-                    new_events.append(event)
+                old_scan_event_set.add(old_scan_event_id)
+            old_scan_event_source_ids[old_scan_source] = old_scan_event_set
 
-        return new_events
+        for fresh_scan_source, fresh_scan_events in fresh_scan_events.items():
+            for fresh_scan_event in fresh_scan_events:
+                fresh_scan_event_id = (
+                    fresh_scan_event["event_source"],
+                    fresh_scan_event["event_name"],
+                    fresh_scan_event["event_location"],
+                    fresh_scan_event["event_date"],
+                    fresh_scan_event["event_time"],
+                    fresh_scan_event["event_price"],
+                    fresh_scan_event["event_url"],
+                )
+                if (
+                    fresh_scan_source in old_scan_event_source_ids
+                    and fresh_scan_event_id
+                    not in old_scan_event_source_ids[fresh_scan_source]
+                ):
+                    try:
+                        logger.debug(f"New weekly event found: {fresh_scan_event}")
+                        weekly_new_events.append(fresh_scan_event)
+                    except Exception as event_error:
+                        logger.error(f"Error parsing weekly new event: {event_error}")
+                        self.slack_manager.send_error_message(
+                            f"Error parsing weekly new event: {event_error}"
+                        )
+
+        return weekly_new_events

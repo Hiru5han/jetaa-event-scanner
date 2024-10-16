@@ -1,10 +1,10 @@
 import logging
 import os
+from urllib.parse import quote
 
 import requests
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class SlackManager:
@@ -77,6 +77,12 @@ class SlackManager:
                 "Event Name": event_name,
                 "Date": event_date,
             },
+            "daiwa_foundation": {
+                "Event Name": event_name,
+                "Date": event_date,
+                "event_time": event_time,
+                "Location": event_location,
+            },
         }
 
         try:
@@ -110,6 +116,11 @@ class SlackManager:
         if event_source == "japan_foundation":
             source = "Japan Foundation"
             logo_url = "https://scontent-man2-1.xx.fbcdn.net/v/t39.30808-6/326585033_897223148096653_606147465752039503_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=5f2048&_nc_ohc=bWQAsrNzoVsAX_Di8c_&_nc_ht=scontent-man2-1.xx&oh=00_AfBTHE7cQ6EVL2ARGrPWEE8zvn2-nBh_Igonom7yVID0AQ&oe=66001E2C"
+        if event_source == "daiwa_foundation":
+            source = "Daiwa Foundation"
+            logo_url = (
+                "https://upload.wikimedia.org/wikipedia/commons/c/c8/Daiwa_Logo.png"
+            )
 
         return source, logo_url
 
@@ -125,6 +136,10 @@ class SlackManager:
         event_image_url,
     ):
         logger.debug("Generating message data")
+
+        # URL-encode the image URL to handle non-ASCII characters
+        encoded_image_url = quote(event_image_url, safe=":/")
+
         event_details_text = self._message_text_generator(
             event_source,
             event_name,
@@ -155,17 +170,12 @@ class SlackManager:
                             "text": "Event Image",
                             "emoji": True,
                         },
-                        "image_url": event_image_url,
+                        "image_url": encoded_image_url,
                         "alt_text": "Event Image",
                     },
                     {
                         "type": "section",
                         "text": {"type": "mrkdwn", "text": event_details_text},
-                        # "accessory": {
-                        #     "type": "image",
-                        #     "image_url": logo_url,
-                        #     "alt_text": "calendar",
-                        # },
                     },
                     {
                         "type": "actions",
@@ -227,6 +237,7 @@ class SlackManager:
             response = requests.post(self.slack_post_api, headers=headers, json=data)
             logger.debug("Message sent successfully!")
             logger.debug(f"Response: {response}")
+            logger.debug(f"Response Content: {response.json()}")
         except Exception as post_error:
             logger.error(f"Error posting message to slack {post_error}")
             self.send_error_message(f"Error posting message to slack {post_error}")
