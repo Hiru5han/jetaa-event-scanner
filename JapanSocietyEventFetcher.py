@@ -121,7 +121,7 @@ class JapanSocietyEventFetcher:
             self.slack_manager.send_error_message(
                 "Issue with Japan Society event fetcher, no events found"
             )
-        logger.error(f"Existing_events: {existing_events}")
+        logger.info(f"Existing_events: {existing_events}")
         return existing_events
 
 
