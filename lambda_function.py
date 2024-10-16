@@ -97,19 +97,29 @@ def lambda_handler(event, context):
     if today.weekday() == 6:  # 6 means Sunday in Python's weekday() function
         logger.info("Today is Sunday. Performing weekly scan.")
 
-        # Find new events for the week
-        weekly_new_events = comparator.compare_with_week_old_events(fresh_scan_events)
-        weekly_grouped_events = group_events_by_source(weekly_new_events)
-        logger.debug(f"Weekly new events: {weekly_new_events}")
-
-        # Save weekly events JSON to S3
+        # Check if the weekly file already exists in S3
         weekly_file_name = (
             f"{prefix}/{weekly_prefix}/events_{today.strftime('%Y-%m-%d')}.json"
         )
-        s3_manager.upload_json_to_s3(
-            weekly_grouped_events, bucket_name, weekly_file_name
-        )
-        logger.info(f"Uploaded weekly events to S3: {weekly_file_name}")
+        if s3_manager.file_exists(bucket_name, weekly_file_name):
+            logger.info(
+                f"Weekly file already exists: {weekly_file_name}. Skipping scan."
+            )
+        else:
+            logger.info("Weekly file not found. Running weekly scan.")
+
+            # Find new events for the week
+            weekly_new_events = comparator.compare_with_week_old_events(
+                fresh_scan_events
+            )
+            weekly_grouped_events = group_events_by_source(weekly_new_events)
+            logger.debug(f"Weekly new events: {weekly_new_events}")
+
+            # Save weekly events JSON to S3
+            s3_manager.upload_json_to_s3(
+                weekly_grouped_events, bucket_name, weekly_file_name
+            )
+            logger.info(f"Uploaded weekly events to S3: {weekly_file_name}")
 
     # slack_manager.send_to_dev()
 
