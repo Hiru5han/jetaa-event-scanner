@@ -1,5 +1,4 @@
 import logging
-
 import requests
 from bs4 import BeautifulSoup
 
@@ -14,31 +13,30 @@ class DaiwaFoundationEventFetcher:
         self.events_data = []
 
     def _fetch_page_content(self, url):
-        print(f"Fetching page content from {url}...")
+        logger.info(f"Attempting to fetch page content from {url}")
         try:
             response = requests.get(url)
             response.raise_for_status()
-            print(f"Successfully fetched content from {url}")
+            logger.info(
+                f"Successfully fetched content from {url} with status code {response.status_code}"
+            )
             return response.text
         except requests.RequestException as e:
-            logging.error(f"Error fetching page content: {e}")
-            print(f"Failed to fetch content from {url}")
+            logger.error(f"Error fetching page content from {url}: {e}")
             return None
 
     def _extract_event_links(self, html_content):
-        print("Extracting event links from the main page...")
+        logger.info("Extracting event links from the main page...")
         soup = BeautifulSoup(html_content, "html.parser")
         event_links = []
         # Find all event links on the main page
         for event in soup.select("article.event_listing h2.listing_title a"):
             event_links.append(event["href"])
-        print(f"Found {len(event_links)} event links.")
+        logger.info(f"Found {len(event_links)} event links.")
         return event_links
 
     def _extract_event_details(self, event_page_content, event_url):
-        # Print the event link to allow you to provide the HTML if needed
-        print(f"\nExtracting details from event page: {event_url}")
-
+        logger.info(f"Extracting details from event page: {event_url}")
         soup = BeautifulSoup(event_page_content, "html.parser")
         try:
             # Extract event name
@@ -88,23 +86,25 @@ class DaiwaFoundationEventFetcher:
                 "event_url": event_url,
                 "event_image_url": event_image_url,
             }
-            print(f"Successfully extracted event: {event_name}")
+            logger.info(f"Successfully extracted event: {event_name}")
             return event_details
         except AttributeError as e:
-            logging.error(f"Error extracting event details from {event_url}: {e}")
-            print(f"Failed to extract event details from {event_url}")
+            logger.error(f"Error extracting event details from {event_url}: {e}")
             return None
 
     def combine_and_return_events(self):
-        print(f"Starting event scraping for {self.event_source}...")
+        logger.info(f"Starting event scraping for {self.event_source}...")
         html_content = self._fetch_page_content(self.base_url)
         if not html_content:
-            logging.error("No HTML content to parse.")
-            print("No HTML content to parse.")
+            logger.error("No HTML content to parse.")
             return []
 
         event_links = self._extract_event_links(html_content)
+        if not event_links:
+            logger.warning("No event links found on the main page.")
+
         for event_link in event_links:
+            logger.info(f"Fetching event details from {event_link}")
             event_page_content = self._fetch_page_content(event_link)
             if event_page_content:
                 event_details = self._extract_event_details(
@@ -114,11 +114,10 @@ class DaiwaFoundationEventFetcher:
                     self.events_data.append(event_details)
 
         if not self.events_data:
-            logging.error(f"No events found for {self.event_source}.")
-            print(f"No events found for {self.event_source}.")
+            logger.error(f"No events found for {self.event_source}.")
             return []
 
-        print(f"Scraping complete. Found {len(self.events_data)} events.")
+        logger.info(f"Scraping complete. Found {len(self.events_data)} events.")
         return self.events_data
 
 
