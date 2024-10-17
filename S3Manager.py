@@ -139,6 +139,29 @@ class S3Manager:
 
         return True
 
+    def file_exists(self, bucket_name, file_name):
+        """Checks if a file exists in the specified S3 bucket."""
+        try:
+            # Use HeadObject to check for the file without downloading it
+            self.s3_resource.Object(bucket_name, file_name).load()
+            logger.debug(f"File {file_name} exists in bucket {bucket_name}")
+            return True
+        except self.s3_resource.meta.client.exceptions.NoSuchKey:
+            # This is the specific exception for missing objects
+            logger.debug(f"File {file_name} does not exist in bucket {bucket_name}")
+            return False
+        except self.s3_resource.meta.client.exceptions.ClientError as e:
+            # Handle any ClientError that isn't NoSuchKey
+            if e.response["Error"]["Code"] == "404":
+                logger.debug(f"File {file_name} does not exist in bucket {bucket_name}")
+                return False
+            else:
+                logger.error(f"Error checking file existence: {e}")
+                return False
+        except Exception as e:
+            logger.error(f"Unexpected error checking file existence: {e}")
+            return False
+
 
 # if __name__ == "__main__":
 #     s3_manager = S3Manager()
