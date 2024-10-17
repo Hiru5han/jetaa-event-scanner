@@ -1,5 +1,5 @@
-import subprocess
 import os
+import subprocess
 
 
 def run_shell_command(command):
