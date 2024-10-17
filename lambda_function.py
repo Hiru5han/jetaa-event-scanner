@@ -11,17 +11,8 @@ from JETAAEventFetcher import JETAAEventFetcher
 from S3Manager import S3Manager
 from SlackManager import SlackManager
 
-
-def setup_logging():
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    logging.getLogger("botocore").setLevel(logging.WARNING)
-
-
-setup_logging()
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def group_events_by_source(events):

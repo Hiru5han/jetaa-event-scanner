@@ -3,8 +3,8 @@ import logging
 from S3Manager import S3Manager
 from SlackManager import SlackManager
 
-
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class Comparator:

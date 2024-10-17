@@ -1,15 +1,15 @@
 import csv
-from datetime import datetime, timedelta, timezone
 import io
 import json
 import logging
 import sys
+from datetime import datetime, timedelta, timezone
 
 import boto3
 from botocore.exceptions import NoCredentialsError
 
-
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class S3Manager:
