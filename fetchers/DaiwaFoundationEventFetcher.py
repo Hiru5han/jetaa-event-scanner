@@ -3,7 +3,6 @@ import requests
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class DaiwaFoundationEventFetcher:

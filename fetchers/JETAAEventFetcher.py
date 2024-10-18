@@ -3,10 +3,9 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 
-from SlackManager import SlackManager
+from utils.SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class JETAAEventFetcher:

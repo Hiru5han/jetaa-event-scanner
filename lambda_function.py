@@ -2,17 +2,33 @@ import json
 import logging
 from datetime import datetime
 
-from Comparator import Comparator
-from DaiwaFoundationEventFetcher import DaiwaFoundationEventFetcher
-from JapanFoundationEventFetcher import JapanFoundationEventFetcher
-from JapanHouseEventFetcher import JapanHouseEventFetcher
-from JapanSocietyEventFetcher import JapanSocietyEventFetcher
-from JETAAEventFetcher import JETAAEventFetcher
-from S3Manager import S3Manager
-from SlackManager import SlackManager
+from utils.Comparator import Comparator
+from fetchers.DaiwaFoundationEventFetcher import DaiwaFoundationEventFetcher
+from fetchers.JapanFoundationEventFetcher import JapanFoundationEventFetcher
+from fetchers.JapanHouseEventFetcher import JapanHouseEventFetcher
+from fetchers.JapanSocietyEventFetcher import JapanSocietyEventFetcher
+from fetchers.JETAAEventFetcher import JETAAEventFetcher
+from utils.S3Manager import S3Manager
+from utils.SlackManager import SlackManager
 
-logger = logging.getLogger(__name__)
+# Main logger setup
+logger = logging.getLogger()  # Get the root logger
 logger.setLevel(logging.DEBUG)
+
+# Check if there are any handlers already (to avoid duplicates)
+if not logger.hasHandlers():
+    # Console handler for terminal output
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+
+    # Formatter for console output
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    console_handler.setFormatter(formatter)
+
+    # Add the console handler to the root logger
+    logger.addHandler(console_handler)
 
 
 def group_events_by_source(events):
