@@ -18,16 +18,27 @@ class JapanHouseEventFetcher:
         self.events_data = []
 
     def _fetch_page_content(self):
-        response = requests.get(self.url)
-        logger.debug(f"URL: {self.url}")
-        logger.debug(f"Status code: {response.status_code}")
+        try:
+            response = requests.get(self.url)
+            logger.debug(f"URL: {self.url}")
+            logger.debug(f"Status code: {response.status_code}")
 
-        if response.status_code == 200:
-            logger.debug("Successfully fetched the webpage content.")
-            return response.text
-        else:
-            logger.error(
-                f"Failed to fetch the {self.event_source} webpage content. Status code: {response.status_code}"
+            if response.status_code == 200:
+                logger.debug("Successfully fetched the webpage content.")
+                return response.text
+            else:
+                logger.error(
+                    f"Failed to fetch the {self.event_source} webpage content. Status code: {response.status_code}"
+                )
+                # Send error message to Slack
+                self.slack_manager.send_error_message(
+                    f"Failed to fetch {self.event_source} webpage. Status code: {response.status_code}"
+                )
+                return None
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Network error occurred: {e}")
+            self.slack_manager.send_error_message(
+                f"Network error fetching {self.event_source} events"
             )
             return None
 
@@ -46,6 +57,8 @@ class JapanHouseEventFetcher:
                 return event_data_json
             except json.JSONDecodeError as e:
                 logger.error(f"Error decoding JSON from v-bind: {e}")
+                # Send error message to Slack when JSON decoding fails
+                self.slack_manager.send_error_message("Error decoding JSON from v-bind")
                 return None
         else:
             logger.error("Could not find the 'v-bind' attribute in 'archive-whats-on'.")
@@ -82,8 +95,13 @@ class JapanHouseEventFetcher:
 
     def combine_and_return_events(self):
         html_content = self._fetch_page_content()
+
+        # If no content is fetched, send an error message to Slack and return
         if not html_content:
             logger.error("No HTML content to parse.")
+            self.slack_manager.send_error_message(
+                "Issue with Japan House event fetcher, no events found"
+            )
             return []
 
         # Parse the v-bind JSON from the archive-whats-on component
