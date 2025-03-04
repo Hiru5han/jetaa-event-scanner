@@ -1,0 +1,19 @@
+# Ignore Python virtual environment
+venv/
+*.pyc
+__pycache__/
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore environment files
+.env
+
+# Ignore log files
+*.log
+
+# Ignore dependency directories
+node_modules/
+
+# Ignore package folder
+package
