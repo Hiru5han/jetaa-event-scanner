@@ -5,7 +5,7 @@ from time import sleep
 import requests
 from bs4 import BeautifulSoup
 
-from utils.SlackManager import SlackManager
+# from utils.SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class EmbassyEventFetcher:
         self.base_url = "https://www.uk.emb-japan.go.jp/JAPANUKEvent/event/"
         self.year = year
         self.short_year = str(year)[2:]
-        self.slack_manager = SlackManager()
+        # self.slack_manager = SlackManager()
         self.user_agents = [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36",
@@ -80,11 +80,11 @@ class EmbassyEventFetcher:
                 continue
             sleep(choice(range(2, 6)))  # Random sleep between 1 to 3 seconds
 
-        if not events:
-            logger.error("Issue with Embassy event fetcher, no events found")
-            self.slack_manager.send_error_message(
-                "Issue with Embassy event fetcher, no events found"
-            )
+        # if not events:
+        #     logger.error("Issue with Embassy event fetcher, no events found")
+        #     self.slack_manager.send_error_message(
+        #         "Issue with Embassy event fetcher, no events found"
+        #     )
 
         return events
 

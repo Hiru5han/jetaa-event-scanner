@@ -4,7 +4,7 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 
-from utils.SlackManager import SlackManager
+# from utils.SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class JapanSocietyEventFetcher:
     def __init__(self):
         self.base_url = "https://www.japansociety.org.uk/events"
         self.session = requests.Session()
-        self.slack_manager = SlackManager()
+        # self.slack_manager = SlackManager()
 
     def _scrape_events_from_url(self, url, existing_events):
         try:
@@ -117,10 +117,10 @@ class JapanSocietyEventFetcher:
                 page_url = self.base_url + page_url
             self._scrape_events_from_url(page_url, existing_events)
 
-        if existing_events == []:
-            self.slack_manager.send_error_message(
-                "Issue with Japan Society event fetcher, no events found"
-            )
+        # if existing_events == []:
+        #     self.slack_manager.send_error_message(
+        #         "Issue with Japan Society event fetcher, no events found"
+        #     )
         logger.info(f"Existing_events: {existing_events}")
         return existing_events
 

@@ -5,7 +5,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-from utils.SlackManager import SlackManager
+# from utils.SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ class JapanFoundationEventFetcher:
     def __init__(self):
         self.base_url = "https://www.jpf.org.uk"
         self.whatson_url = f"{self.base_url}/whatson.php"
-        self.slack_manager = SlackManager()
+        # self.slack_manager = SlackManager()
 
     def _fetch_webpage_content(self):
         response = requests.get(self.whatson_url)
@@ -94,10 +94,10 @@ class JapanFoundationEventFetcher:
             logger.debug(f"Error in Japan Foundation event fetcher: {page_check_error}")
             return []
 
-        if not events:
-            self.slack_manager.send_error_message(
-                "Issue with Japan Foundation event fetcher, no events found"
-            )
+        # if not events:
+        #     self.slack_manager.send_error_message(
+        #         "Issue with Japan Foundation event fetcher, no events found"
+        #     )
         return events
 
 

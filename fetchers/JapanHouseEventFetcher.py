@@ -5,7 +5,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-from utils.SlackManager import SlackManager
+# from utils.SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ class JapanHouseEventFetcher:
     def __init__(self):
         self.url = "https://www.japanhouselondon.uk/whats-on/"
         self.event_source = "japan_house"
-        self.slack_manager = SlackManager()
+        # self.slack_manager = SlackManager()
         self.events_data = []
 
     def _fetch_page_content(self):
@@ -31,15 +31,15 @@ class JapanHouseEventFetcher:
                     f"Failed to fetch the {self.event_source} webpage content. Status code: {response.status_code}"
                 )
                 # Send error message to Slack
-                self.slack_manager.send_error_message(
-                    f"Failed to fetch {self.event_source} webpage. Status code: {response.status_code}"
-                )
+                # self.slack_manager.send_error_message(
+                #     f"Failed to fetch {self.event_source} webpage. Status code: {response.status_code}"
+                # )
                 return None
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error occurred: {e}")
-            self.slack_manager.send_error_message(
-                f"Network error fetching {self.event_source} events"
-            )
+            # self.slack_manager.send_error_message(
+            #     f"Network error fetching {self.event_source} events"
+            # )
             return None
 
     def _parse_events_from_vbind(self, html_content):
@@ -58,7 +58,7 @@ class JapanHouseEventFetcher:
             except json.JSONDecodeError as e:
                 logger.error(f"Error decoding JSON from v-bind: {e}")
                 # Send error message to Slack when JSON decoding fails
-                self.slack_manager.send_error_message("Error decoding JSON from v-bind")
+                # self.slack_manager.send_error_message("Error decoding JSON from v-bind")
                 return None
         else:
             logger.error("Could not find the 'v-bind' attribute in 'archive-whats-on'.")
@@ -113,11 +113,11 @@ class JapanHouseEventFetcher:
         # Extract event details from the parsed JSON
         self.events_data = self._extract_event_details(event_json)
 
-        if not self.events_data:
-            logger.error("Issue with Japan House event fetcher, no events found")
-            self.slack_manager.send_error_message(
-                "Issue with Japan House event fetcher, no events found"
-            )
+        # if not self.events_data:
+        #     logger.error("Issue with Japan House event fetcher, no events found")
+        #     self.slack_manager.send_error_message(
+        #         "Issue with Japan House event fetcher, no events found"
+        #     )
 
         return self.events_data
 

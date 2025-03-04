@@ -3,7 +3,7 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 
-from utils.SlackManager import SlackManager
+# from utils.SlackManager import SlackManager
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class JETAAEventFetcher:
         self.year = year
         self.events = []
         self.event_source = "jetaa"
-        self.slack_manager = SlackManager()
+        # self.slack_manager = SlackManager()
 
     def fetch_events(self, url):
         try:
@@ -92,9 +92,9 @@ class JETAAEventFetcher:
             logger.error(f"Error: {monthly_processor_error}")
             return []
 
-        if self.events == []:
-            self.slack_manager.send_error_message(
-                "Issue with JETAA event fetcher, no events found"
-            )
+        # if self.events == []:
+        #     self.slack_manager.send_error_message(
+        #         "Issue with JETAA event fetcher, no events found"
+        #     )
 
         return self.events
